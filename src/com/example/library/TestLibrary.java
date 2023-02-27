@@ -29,20 +29,36 @@ import java.util.Date;
 public class TestLibrary {
 
     private String baseUrl;
-    private String packageName;
-    private Boolean isDublicate;
-    private static String data = "{\n" +
+    private static String packageName;
+    private static Boolean isDublicate;
+
+    private static PublicKey publicKey;
+    private static String dataReg = "{\n" +
             "  \"action\": \"REG\",\n" +
             "  \"anyData\": {\"createdUserId\":\"112\",\"username\":\"Эрмек\",\"email\":\"email.ru\"}\n" +
             "}";
-    private BouncyCastleProvider bouncyCastleProvider;
-    public final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
+
+    private static String dataLog = "{\n" +
+            "  \"action\": \"LOG\",\n" +
+            "  \"anyData\": {\"createdUserId\":\"112\",\"username\":\"Эрмек\",\"email\":\"email.ru\"}\n" +
+            "}";
+    private static BouncyCastleProvider bouncyCastleProvider;
+    public static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
     private APIInterface apiInterface;
 
-    private LibraryResponse libraryResponse;
+    static {
+        bouncyCastleProvider = BOUNCY_CASTLE_PROVIDER;
+        Security.removeProvider("BC");
+        Security.addProvider(bouncyCastleProvider);
+    }
+
+    private static LibraryResponse libraryResponse;
 
     public static void main(String[] args) {
-
+        String qrData = signQrData(dataReg);
+        System.out.println(qrData);
+        String qrDataReg = signQrData(dataLog);
+        System.out.println(qrDataReg);
     }
 
     public TestLibrary(String baseUrl, String packageName) {
@@ -52,7 +68,7 @@ public class TestLibrary {
         initRetrofit();
     }
 
-    public String signQrData(String qrResult) {
+    public static String signQrData(String qrResult) {
         libraryResponse = new LibraryResponse("", "", false);
         try {
             Gson gson = new Gson();
@@ -84,7 +100,7 @@ public class TestLibrary {
         return JsonUtils.toJson(libraryResponse);
     }
 
-    private void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
+    private static void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
         SecureRandom random = new SecureRandom();
         String hexHash = userIdToHash(userData.getCreatedUserId());
         try {
@@ -94,6 +110,7 @@ public class TestLibrary {
             isDublicate = false;
         }
         KeyPair keyPair = generateKeys(random);
+        publicKey = keyPair.getPublic();
         X509Certificate cert = generateX509Certificate(keyPair);
         storeToKeyStore(cert, keyPair.getPrivate(), hexHash);
         String userDataJson = JsonUtils.toJson(userData);
@@ -107,18 +124,18 @@ public class TestLibrary {
         //request(digitalSignature, action, publicKey);
     }
 
-    private String userIdToHash(int createdUserId) throws NoSuchAlgorithmException {
+    private static String userIdToHash(int createdUserId) throws NoSuchAlgorithmException {
         byte[] hash = getMD5Hash(createdUserId);
         return bytesToHex(hash);
     }
 
-    private void showResponse(String message, boolean result, String doc) {
+    private static void showResponse(String message, boolean result, String doc) {
         libraryResponse.setMessage(message);
         libraryResponse.setResult(result);
         libraryResponse.setDocument(doc);
     }
 
-    private void login(UserData userData, String action) {
+    private static void login(UserData userData, String action) {
         try {
             String hexHash = userIdToHash(userData.getCreatedUserId());
             PrivateKey privateKey = getPrivateKey(hexHash);
@@ -126,7 +143,7 @@ public class TestLibrary {
                 SecureRandom random = new SecureRandom();
                 String userDataJson = JsonUtils.toJson(userData);
                 byte[] digitalSignature = signingData(privateKey, random, userDataJson);
-                boolean verified = verifiedSignedData(null, userDataJson, digitalSignature);
+                boolean verified = verifiedSignedData(publicKey, userDataJson, digitalSignature);
                 if (verified) {
                     showResponse("success", true, "");
                 } else  {
@@ -134,8 +151,8 @@ public class TestLibrary {
                 }
 //                request(digitalSignature, action, null);
             } else  {
-                System.out.println("PrivateKey does not exist!!!");
-                showResponse("PrivateKey does not exist!", false, "");
+                System.out.println("Invalid user id");
+                showResponse("Invalid user id", false, "");
             }
 
         } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException |
@@ -149,7 +166,7 @@ public class TestLibrary {
 
     }
 
-    private void document(DocData docData, String action) {
+    private static void document(DocData docData, String action) {
         try {
             String hexHash = userIdToHash(docData.getCreatedUserid());
             PrivateKey privateKey = getPrivateKey(hexHash);
@@ -157,7 +174,7 @@ public class TestLibrary {
                 SecureRandom random = new SecureRandom();
                 String docDataJson = JsonUtils.toJson(docData);
                 byte[] digitalSignature = signingData(privateKey, random, docDataJson);
-                boolean verified = verifiedSignedData(null, docDataJson, digitalSignature);
+                boolean verified = verifiedSignedData(publicKey, docDataJson, digitalSignature);
                 if (verified) {
                     showResponse("success", true, "");
                 } else  {
@@ -165,7 +182,7 @@ public class TestLibrary {
                 }
 //                request(digitalSignature, action, null);
             } else  {
-                showResponse("PrivateKey does not exist!", false, "");
+                showResponse("Invalid user id", false, "");
             }
         } catch (KeyStoreException | IOException | UnrecoverableKeyException | NoSuchAlgorithmException |
                  CertificateException e) {
@@ -176,20 +193,20 @@ public class TestLibrary {
     }
 
 
-    private PrivateKey getPrivateKey(String hexHash) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
+    private static PrivateKey getPrivateKey(String hexHash) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        FileInputStream inputStream = new FileInputStream(new File("/data/data/" + packageName + "/keystore.jks"));
-//        FileInputStream inputStream = new FileInputStream("keystore.jks");
+//        FileInputStream inputStream = new FileInputStream(new File("/data/data/" + packageName + "/keystore.jks"));
+        FileInputStream inputStream = new FileInputStream("keystore.jks");
         ks.load(inputStream, "passwd".toCharArray());
         return (PrivateKey) ks.getKey(hexHash, "passwd".toCharArray());
     }
 
-    private void storeToKeyStore(X509Certificate cert, PrivateKey privateKey, String hexHash) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    private static void storeToKeyStore(X509Certificate cert, PrivateKey privateKey, String hexHash) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
         ks.setKeyEntry(hexHash, privateKey, "passwd".toCharArray(), new java.security.cert.Certificate[]{cert});
-        FileOutputStream fos = new FileOutputStream(new File("/data/data/" + packageName + "/keystore.jks"));
-//        FileOutputStream fos = new FileOutputStream("keystore.jks");
+//        FileOutputStream fos = new FileOutputStream(new File("/data/data/" + packageName + "/keystore.jks"));
+        FileOutputStream fos = new FileOutputStream("keystore.jks");
         ks.store(fos, "passwd".toCharArray());
         fos.close();
     }
@@ -210,21 +227,21 @@ public class TestLibrary {
         return certGen.generateX509Certificate(keyPair.getPrivate());
     }
 
-    private byte[] signingData(PrivateKey privateKey, SecureRandom random, String anyData) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    private static byte[] signingData(PrivateKey privateKey, SecureRandom random, String anyData) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature signature = Signature.getInstance("SHA256withRSA", bouncyCastleProvider);
         signature.initSign(privateKey, random);
         signature.update(anyData.getBytes());
         return signature.sign();
     }
 
-    private boolean verifiedSignedData(PublicKey publicKey, String anyData, byte[] digitalSignature) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    private static boolean verifiedSignedData(PublicKey publicKey, String anyData, byte[] digitalSignature) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature signature = Signature.getInstance("SHA256withRSA", bouncyCastleProvider);
         signature.initVerify(publicKey);
         signature.update(anyData.getBytes());
         return signature.verify(digitalSignature);
     }
 
-    private KeyPair generateKeys(SecureRandom random) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+    private static KeyPair generateKeys(SecureRandom random) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", bouncyCastleProvider);
         keyPairGenerator.initialize(2048, random);
@@ -282,7 +299,7 @@ public class TestLibrary {
         Security.addProvider(bouncyCastleProvider);
     }
 
-    private byte[] getMD5Hash(int userId) throws NoSuchAlgorithmException {
+    private static byte[] getMD5Hash(int userId) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance( "MD5");
         byte[] objectBytes = SerializationUtils.serialize(userId);
         md.update(objectBytes);
