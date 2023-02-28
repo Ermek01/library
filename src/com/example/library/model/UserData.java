@@ -1,18 +1,20 @@
 package com.example.library.model;
 
-public class UserData {
+import java.io.Serializable;
 
-    private int createdUserId;
+public class UserData implements Serializable {
+
+    private String createdUserId;
     private String username;
     private String email;
 
-    public UserData(int createdUserId, String username, String email) {
+    public UserData(String createdUserId, String username, String email) {
         this.createdUserId = createdUserId;
         this.username = username;
         this.email = email;
     }
 
-    public int getCreatedUserId() {
+    public String getCreatedUserId() {
         return createdUserId;
     }
 

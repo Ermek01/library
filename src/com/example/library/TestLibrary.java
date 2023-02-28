@@ -23,13 +23,15 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Enumeration;
 
 public class TestLibrary {
 
+    private final String filePath;
     private String baseUrl;
-    private String packageName;
     private Boolean isDublicate;
     private static String data = "{\n" +
             "  \"action\": \"REG\",\n" +
@@ -40,6 +42,9 @@ public class TestLibrary {
     private APIInterface apiInterface;
 
     private LibraryResponse libraryResponse;
+    private String action = "";
+    private String qrResult = "";
+    private String userHash = "";
 
     public static void main(String[] args) {
 
@@ -47,18 +52,18 @@ public class TestLibrary {
 
     public TestLibrary(String baseUrl, String packageName) {
         this.baseUrl = baseUrl;
-        this.packageName = packageName;
+        filePath = "/data/data/" + packageName + "/keystore.jks";
         initProvider();
         initRetrofit();
     }
 
     public String signQrData(String qrResult) {
-        libraryResponse = new LibraryResponse("", "", false);
+        this.qrResult = qrResult;
+        libraryResponse = new LibraryResponse();
         try {
             Gson gson = new Gson();
             JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-            String action = jsonObject.get("action").getAsString();
-
+            action = jsonObject.get("action").getAsString();
             switch (action) {
                 case "REG":
                     JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
@@ -86,16 +91,16 @@ public class TestLibrary {
 
     private void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
         SecureRandom random = new SecureRandom();
-        String hexHash = userIdToHash(userData.getCreatedUserId());
+        userHash = userIdToHash(userData.getCreatedUserId());
         try {
-            getPrivateKey(hexHash);
+            getPrivateKey(userHash);
             isDublicate = true;
         } catch (UnrecoverableKeyException | IOException e) {
             isDublicate = false;
         }
         KeyPair keyPair = generateKeys(random);
         X509Certificate cert = generateX509Certificate(keyPair);
-        storeToKeyStore(cert, keyPair.getPrivate(), hexHash);
+        storeToKeyStore(cert, keyPair.getPrivate(), userHash);
         String userDataJson = JsonUtils.toJson(userData);
         byte[] digitalSignature = signingData(keyPair.getPrivate(), random, userDataJson);
         boolean verified = verifiedSignedData(keyPair.getPublic(), userDataJson, digitalSignature);
@@ -107,12 +112,15 @@ public class TestLibrary {
         //request(digitalSignature, action, publicKey);
     }
 
-    private String userIdToHash(int createdUserId) throws NoSuchAlgorithmException {
+    private String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
         byte[] hash = getMD5Hash(createdUserId);
         return bytesToHex(hash);
     }
 
     private void showResponse(String message, boolean result, String doc) {
+        libraryResponse.setAction(action);
+        libraryResponse.setAnyData(qrResult);
+        libraryResponse.setUserHash(userHash);
         libraryResponse.setMessage(message);
         libraryResponse.setResult(result);
         libraryResponse.setDocument(doc);
@@ -120,8 +128,8 @@ public class TestLibrary {
 
     private void login(UserData userData, String action) {
         try {
-            String hexHash = userIdToHash(userData.getCreatedUserId());
-            PrivateKey privateKey = getPrivateKey(hexHash);
+            userHash = userIdToHash(userData.getCreatedUserId());
+            PrivateKey privateKey = getPrivateKey(userHash);
             if (privateKey != null) {
                 SecureRandom random = new SecureRandom();
                 String userDataJson = JsonUtils.toJson(userData);
@@ -151,8 +159,8 @@ public class TestLibrary {
 
     private void document(DocData docData, String action) {
         try {
-            String hexHash = userIdToHash(docData.getCreatedUserid());
-            PrivateKey privateKey = getPrivateKey(hexHash);
+            userHash = userIdToHash(docData.getCreatedUserid());
+            PrivateKey privateKey = getPrivateKey(userHash);
             if (privateKey != null) {
                 SecureRandom random = new SecureRandom();
                 String docDataJson = JsonUtils.toJson(docData);
@@ -178,7 +186,7 @@ public class TestLibrary {
 
     private PrivateKey getPrivateKey(String hexHash) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        FileInputStream inputStream = new FileInputStream(new File("/data/data/" + packageName + "/keystore.jks"));
+        FileInputStream inputStream = new FileInputStream(new File(filePath));
 //        FileInputStream inputStream = new FileInputStream("keystore.jks");
         ks.load(inputStream, "passwd".toCharArray());
         return (PrivateKey) ks.getKey(hexHash, "passwd".toCharArray());
@@ -188,7 +196,7 @@ public class TestLibrary {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
         ks.setKeyEntry(hexHash, privateKey, "passwd".toCharArray(), new java.security.cert.Certificate[]{cert});
-        FileOutputStream fos = new FileOutputStream(new File("/data/data/" + packageName + "/keystore.jks"));
+        FileOutputStream fos = new FileOutputStream(new File(filePath));
 //        FileOutputStream fos = new FileOutputStream("keystore.jks");
         ks.store(fos, "passwd".toCharArray());
         fos.close();
@@ -282,10 +290,10 @@ public class TestLibrary {
         Security.addProvider(bouncyCastleProvider);
     }
 
-    private byte[] getMD5Hash(int userId) throws NoSuchAlgorithmException {
+    private byte[] getMD5Hash(String userId) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance( "MD5");
-        byte[] objectBytes = SerializationUtils.serialize(userId);
-        md.update(objectBytes);
+        md.reset();
+        md.update(userId.getBytes());
         return md.digest();
     }
 
@@ -295,6 +303,23 @@ public class TestLibrary {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    public ArrayList<String> getKeys() {
+        ArrayList<String> keys = new ArrayList<>();
+        try {
+            FileInputStream fis = new FileInputStream(new File(filePath));
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(fis, "passwd".toCharArray());
+            Enumeration<String> aliases = keyStore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                keys.add(alias);
+            }
+        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        return keys;
     }
 
 
