@@ -5,7 +5,6 @@ import com.example.library.utils.JsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import okhttp3.*;
-import org.apache.commons.lang3.SerializationUtils;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
@@ -29,8 +28,6 @@ import java.util.Date;
 import java.util.Enumeration;
 
 public class TestLibrary {
-
-    private static final String filePath;
     private String baseUrl;
     private static String packageName;
     private static Boolean isDublicate;
@@ -61,21 +58,22 @@ public class TestLibrary {
     private static String userHash = "";
 
     public static void main(String[] args) {
-        String qrData = signQrData(dataReg);
-        System.out.println(qrData);
-        String qrDataReg = signQrData(dataLog);
-        System.out.println(qrDataReg);
+        ArrayList<String> arrayList = getKeys();
+        System.out.println(arrayList);
+//        String qrData = signQrData(dataReg);
+//        System.out.println(qrData);
+//        String qrDataReg = signQrData(dataLog);
+//        System.out.println(qrDataReg);
     }
 
     public TestLibrary(String baseUrl, String packageName) {
         this.baseUrl = baseUrl;
-        filePath = "/data/data/" + packageName + "/keystore.jks";
         initProvider();
         initRetrofit();
     }
 
-    public static String signQrData(String qrResult) {
-        this.qrResult = qrResult;
+    public static String signQrData(String qrResult1) {
+        qrResult = qrResult1;
         libraryResponse = new LibraryResponse();
         try {
             Gson gson = new Gson();
@@ -323,10 +321,10 @@ public class TestLibrary {
         return sb.toString();
     }
 
-    public ArrayList<String> getKeys() {
+    public static ArrayList<String> getKeys() {
         ArrayList<String> keys = new ArrayList<>();
         try {
-            FileInputStream fis = new FileInputStream(new File(filePath));
+            FileInputStream fis = new FileInputStream("keystore.jks");
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(fis, "passwd".toCharArray());
             Enumeration<String> aliases = keyStore.aliases();
