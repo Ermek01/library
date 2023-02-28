@@ -142,8 +142,8 @@ public class TestLibrary {
                 }
 //                request(digitalSignature, action, null);
             } else  {
-                System.out.println("PrivateKey does not exist!!!");
-                showResponse("PrivateKey does not exist!", false, "");
+                System.out.println("Invalid User Id");
+                showResponse("Invalid User Id", false, "");
             }
 
         } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException |
@@ -173,7 +173,7 @@ public class TestLibrary {
                 }
 //                request(digitalSignature, action, null);
             } else  {
-                showResponse("PrivateKey does not exist!", false, "");
+                showResponse("Invalid User Id", false, "");
             }
         } catch (KeyStoreException | IOException | UnrecoverableKeyException | NoSuchAlgorithmException |
                  CertificateException e) {
