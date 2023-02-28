@@ -2,13 +2,13 @@ package com.example.library.model;
 
 public class DocData {
     private String docId;
-    private int createdUserid;
+    private String createdUserid;
 
     public String getDocId() {
         return docId;
     }
 
-    public int getCreatedUserid() {
+    public String getCreatedUserid() {
         return createdUserid;
     }
 

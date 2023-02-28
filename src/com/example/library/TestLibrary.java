@@ -23,11 +23,14 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Enumeration;
 
 public class TestLibrary {
 
+    private static final String filePath;
     private String baseUrl;
     private static String packageName;
     private static Boolean isDublicate;
@@ -53,6 +56,9 @@ public class TestLibrary {
     }
 
     private static LibraryResponse libraryResponse;
+    private static String action = "";
+    private static String qrResult = "";
+    private static String userHash = "";
 
     public static void main(String[] args) {
         String qrData = signQrData(dataReg);
@@ -63,18 +69,18 @@ public class TestLibrary {
 
     public TestLibrary(String baseUrl, String packageName) {
         this.baseUrl = baseUrl;
-        this.packageName = packageName;
+        filePath = "/data/data/" + packageName + "/keystore.jks";
         initProvider();
         initRetrofit();
     }
 
     public static String signQrData(String qrResult) {
-        libraryResponse = new LibraryResponse("", "", false);
+        this.qrResult = qrResult;
+        libraryResponse = new LibraryResponse();
         try {
             Gson gson = new Gson();
             JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-            String action = jsonObject.get("action").getAsString();
-
+            action = jsonObject.get("action").getAsString();
             switch (action) {
                 case "REG":
                     JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
@@ -102,9 +108,9 @@ public class TestLibrary {
 
     private static void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
         SecureRandom random = new SecureRandom();
-        String hexHash = userIdToHash(userData.getCreatedUserId());
+        userHash = userIdToHash(userData.getCreatedUserId());
         try {
-            getPrivateKey(hexHash);
+            getPrivateKey(userHash);
             isDublicate = true;
         } catch (UnrecoverableKeyException | IOException e) {
             isDublicate = false;
@@ -112,7 +118,7 @@ public class TestLibrary {
         KeyPair keyPair = generateKeys(random);
         publicKey = keyPair.getPublic();
         X509Certificate cert = generateX509Certificate(keyPair);
-        storeToKeyStore(cert, keyPair.getPrivate(), hexHash);
+        storeToKeyStore(cert, keyPair.getPrivate(), userHash);
         String userDataJson = JsonUtils.toJson(userData);
         byte[] digitalSignature = signingData(keyPair.getPrivate(), random, userDataJson);
         boolean verified = verifiedSignedData(keyPair.getPublic(), userDataJson, digitalSignature);
@@ -124,12 +130,15 @@ public class TestLibrary {
         //request(digitalSignature, action, publicKey);
     }
 
-    private static String userIdToHash(int createdUserId) throws NoSuchAlgorithmException {
+    private static String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
         byte[] hash = getMD5Hash(createdUserId);
         return bytesToHex(hash);
     }
 
     private static void showResponse(String message, boolean result, String doc) {
+        libraryResponse.setAction(action);
+        libraryResponse.setAnyData(qrResult);
+        libraryResponse.setUserHash(userHash);
         libraryResponse.setMessage(message);
         libraryResponse.setResult(result);
         libraryResponse.setDocument(doc);
@@ -137,8 +146,8 @@ public class TestLibrary {
 
     private static void login(UserData userData, String action) {
         try {
-            String hexHash = userIdToHash(userData.getCreatedUserId());
-            PrivateKey privateKey = getPrivateKey(hexHash);
+            userHash = userIdToHash(userData.getCreatedUserId());
+            PrivateKey privateKey = getPrivateKey(userHash);
             if (privateKey != null) {
                 SecureRandom random = new SecureRandom();
                 String userDataJson = JsonUtils.toJson(userData);
@@ -168,8 +177,8 @@ public class TestLibrary {
 
     private static void document(DocData docData, String action) {
         try {
-            String hexHash = userIdToHash(docData.getCreatedUserid());
-            PrivateKey privateKey = getPrivateKey(hexHash);
+            userHash = userIdToHash(docData.getCreatedUserid());
+            PrivateKey privateKey = getPrivateKey(userHash);
             if (privateKey != null) {
                 SecureRandom random = new SecureRandom();
                 String docDataJson = JsonUtils.toJson(docData);
@@ -299,10 +308,10 @@ public class TestLibrary {
         Security.addProvider(bouncyCastleProvider);
     }
 
-    private static byte[] getMD5Hash(int userId) throws NoSuchAlgorithmException {
+    private static byte[] getMD5Hash(String userId) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance( "MD5");
-        byte[] objectBytes = SerializationUtils.serialize(userId);
-        md.update(objectBytes);
+        md.reset();
+        md.update(userId.getBytes());
         return md.digest();
     }
 
@@ -312,6 +321,23 @@ public class TestLibrary {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    public ArrayList<String> getKeys() {
+        ArrayList<String> keys = new ArrayList<>();
+        try {
+            FileInputStream fis = new FileInputStream(new File(filePath));
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(fis, "passwd".toCharArray());
+            Enumeration<String> aliases = keyStore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                keys.add(alias);
+            }
+        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        return keys;
     }
 
 
