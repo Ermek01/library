@@ -33,10 +33,7 @@ public class TestLibrary {
     private static Boolean isDublicate;
 
     private static PublicKey publicKey;
-    private static String dataReg = "{\n" +
-            "  \"action\": \"REG\",\n" +
-            "  \"anyData\": {\"createdUserId\":\"112\",\"username\":\"Эрмек\",\"email\":\"email.ru\"}\n" +
-            "}";
+    private static String dataReg = "{\"sessionId\":\"C54F7D43C1B7365DCC72582FD4292C2B\",\"action\":\"REG\",\"anyData\":{\"id\":1,\"name\":\"Admin\",\"fullName\":\"Admin\"}}";
 
     private static String dataLog = "{\n" +
             "  \"action\": \"LOG\",\n" +
@@ -58,10 +55,10 @@ public class TestLibrary {
     private static String userHash = "";
 
     public static void main(String[] args) {
-        ArrayList<String> arrayList = getKeys();
-        System.out.println(arrayList);
-//        String qrData = signQrData(dataReg);
-//        System.out.println(qrData);
+//        ArrayList<String> arrayList = getKeys();
+//        System.out.println(arrayList);
+        String qrData = signQrData(dataReg);
+        System.out.println(qrData);
 //        String qrDataReg = signQrData(dataLog);
 //        System.out.println(qrDataReg);
     }
