@@ -50,6 +50,10 @@ public class TestLibrary {
 
     }
 
+    public TestLibrary(String packageName) {
+        filePath = "/data/data/" + packageName + "/keystore.jks";
+    }
+
     public TestLibrary(String baseUrl, String packageName) {
         this.baseUrl = baseUrl;
         filePath = "/data/data/" + packageName + "/keystore.jks";
@@ -308,7 +312,7 @@ public class TestLibrary {
     public ArrayList<String> getKeys() {
         ArrayList<String> keys = new ArrayList<>();
         try {
-            FileInputStream fis = new FileInputStream(new File(filePath));
+            FileInputStream fis = new FileInputStream(filePath);
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(fis, "passwd".toCharArray());
             Enumeration<String> aliases = keyStore.aliases();
