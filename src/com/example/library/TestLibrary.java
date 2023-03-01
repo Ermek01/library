@@ -16,6 +16,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.Body;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
@@ -23,6 +24,8 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -47,7 +50,6 @@ public class TestLibrary {
     private String userHash = "";
 
     public static void main(String[] args) {
-
     }
 
     public TestLibrary(String packageName) {
@@ -105,15 +107,29 @@ public class TestLibrary {
         KeyPair keyPair = generateKeys(random);
         X509Certificate cert = generateX509Certificate(keyPair);
         storeToKeyStore(cert, keyPair.getPrivate(), userHash);
-        String userDataJson = JsonUtils.toJson(userData);
-        byte[] digitalSignature = signingData(keyPair.getPrivate(), random, userDataJson);
-        boolean verified = verifiedSignedData(keyPair.getPublic(), userDataJson, digitalSignature);
-        if (verified) {
-            showResponse("success", true, "");
-        } else  {
-            showResponse("failure", false, "");
-        }
-        //request(digitalSignature, action, publicKey);
+//        String userDataJson = JsonUtils.toJson(userData);
+//        byte[] digitalSignature = signingData(keyPair.getPrivate(), random, userDataJson);
+//        boolean verified = verifiedSignedData(keyPair.getPublic(), userDataJson, digitalSignature);
+//        if (verified) {
+//            showResponse("success", true, "");
+//        } else {
+//            showResponse("failure", false, "");
+//        }
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.plusMonths(1);
+        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String sendStartDate = startDate.format(myFormatObj);
+        String sendEndDate = endDate.format(myFormatObj);
+        UserUpdate userUpdate = new UserUpdate();
+        UserUpdate.Data user = new UserUpdate.Data();
+        String publicKeyString = encodePublicKey(keyPair.getPublic());
+        user.setPublicKey(publicKeyString);
+        user.setPublicKeyName(userHash);
+        user.setPeriod(sendStartDate + "-" + sendEndDate);
+        userUpdate.setData(user);
+        String json = JsonUtils.toJson(userUpdate);
+        System.out.println(json);
+        //userUpdate(digitalSignature, action, publicKey);
     }
 
     private String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
@@ -141,11 +157,11 @@ public class TestLibrary {
                 boolean verified = verifiedSignedData(null, userDataJson, digitalSignature);
                 if (verified) {
                     showResponse("success", true, "");
-                } else  {
+                } else {
                     showResponse("failure", false, "");
                 }
 //                request(digitalSignature, action, null);
-            } else  {
+            } else {
                 System.out.println("Invalid User Id");
                 showResponse("Invalid User Id", false, "");
             }
@@ -154,8 +170,7 @@ public class TestLibrary {
                  CertificateException e) {
         } catch (IOException e) {
             showResponse("PrivateKey does not exist!", false, "");
-        }
-        catch (SignatureException | InvalidKeyException e) {
+        } catch (SignatureException | InvalidKeyException e) {
             throw new RuntimeException(e);
         }
 
@@ -172,11 +187,11 @@ public class TestLibrary {
                 boolean verified = verifiedSignedData(null, docDataJson, digitalSignature);
                 if (verified) {
                     showResponse("success", true, "");
-                } else  {
+                } else {
                     showResponse("failure", false, "");
                 }
 //                request(digitalSignature, action, null);
-            } else  {
+            } else {
                 showResponse("Invalid User Id", false, "");
             }
         } catch (KeyStoreException | IOException | UnrecoverableKeyException | NoSuchAlgorithmException |
@@ -253,29 +268,29 @@ public class TestLibrary {
         this.apiInterface = retrofit.create(APIInterface.class);
     }
 
-    private void request(byte[] digitalSignature, String action, PublicKey publicKey) {
+    private void userUpdate(UserUpdate userUpdate) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    String encodedPublicKey = encodePublicKey(publicKey);
-                    ExQrResult exQrResult = new  ExQrResult(action, digitalSignature, encodedPublicKey, isDublicate);
-                    Call<ResponseBody> call = apiInterface.postData(exQrResult);
-                    call.enqueue(new retrofit2.Callback<ResponseBody>() {
-                        @Override
-                        public void onResponse(Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
-                            if (response.isSuccessful()) {
-
-                            } else  {
-
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<ResponseBody> call, Throwable t) {
-                            t.printStackTrace();
-                        }
-                    });
+//                    String encodedPublicKey = encodePublicKey(publicKey);
+//                    ExQrResult exQrResult = new ExQrResult(action, digitalSignature, encodedPublicKey, isDublicate);
+//                    Call<ResponseBody> call = apiInterface.postData(exQrResult);
+//                    call.enqueue(new retrofit2.Callback<ResponseBody>() {
+//                        @Override
+//                        public void onResponse(Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
+//                            if (response.isSuccessful()) {
+//
+//                            } else {
+//
+//                            }
+//                        }
+//
+//                        @Override
+//                        public void onFailure(Call<ResponseBody> call, Throwable t) {
+//                            t.printStackTrace();
+//                        }
+//                    });
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -295,7 +310,7 @@ public class TestLibrary {
     }
 
     private byte[] getMD5Hash(String userId) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance( "MD5");
+        MessageDigest md = MessageDigest.getInstance("MD5");
         md.reset();
         md.update(userId.getBytes());
         return md.digest();
@@ -313,7 +328,7 @@ public class TestLibrary {
         ArrayList<String> keys = new ArrayList<>();
         try {
             FileInputStream fis = new FileInputStream(filePath);
-            KeyStore keyStore = KeyStore.getInstance("JKS");
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(fis, "passwd".toCharArray());
             Enumeration<String> aliases = keyStore.aliases();
             while (aliases.hasMoreElements()) {
@@ -329,8 +344,11 @@ public class TestLibrary {
 
     private interface APIInterface {
         @FormUrlEncoded
-        @POST("/post")
-        Call<ResponseBody> postData(@Body ExQrResult exQrResult);
+        @POST("/ws/rest/com.axelor.auth.db.User/{id}")
+        Call<ResponseBody> postData(
+                @Path("id") int id,
+                @Body UserUpdate userUpdate
+        );
     }
 
 }

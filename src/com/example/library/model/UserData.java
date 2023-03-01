@@ -5,30 +5,19 @@ import java.io.Serializable;
 public class UserData implements Serializable {
 
     private String id;
-    private String username;
-    private String email;
+    private String version;
 
-    public UserData(String id, String username, String email) {
+    public UserData(String id, String version) {
         this.id = id;
-        this.username = username;
-        this.email = email;
+        this.version = version;
     }
 
     public String getCreatedUserId() {
         return id;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    @Override
-    public String toString() {
-        return id + " " + username + " " + email;
+    public String getVersion() {
+        return version;
     }
 
 }
