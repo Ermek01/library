@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 public class UserData implements Serializable {
 
-    private String createdUserId;
+    private String id;
     private String username;
     private String email;
 
-    public UserData(String createdUserId, String username, String email) {
-        this.createdUserId = createdUserId;
+    public UserData(String id, String username, String email) {
+        this.id = id;
         this.username = username;
         this.email = email;
     }
 
     public String getCreatedUserId() {
-        return createdUserId;
+        return id;
     }
 
     public String getUsername() {
@@ -28,7 +28,7 @@ public class UserData implements Serializable {
 
     @Override
     public String toString() {
-        return createdUserId + " " + username + " " + email;
+        return id + " " + username + " " + email;
     }
 
 }
