@@ -28,15 +28,13 @@ import java.util.*;
 
 public class TestLibrary {
 
-    private static final String filePath;
-    public static String baseUrl;
+    //private static final String filePath = "";
+    public static String baseUrl = "http://172.105.82.193:8181/sanarip-tamga/";
     private static Boolean isDublicate;
-    private static String data = "{\n" +
-            "  \"action\": \"REG\",\n" +
-            "  \"anyData\": {\"createdUserId\":\"112\",\"username\":\"Эрмек\",\"email\":\"email.ru\"}\n" +
-            "}";
+    private static String data = "{\"sessionId\":\"75F7B2BDA83104ED34A0EEA9A158962D\",\"action\":\"DOC\",\"anyData\":{\"docId\":1,\"version\":1,\"createdUserId\":1}}";
+    private static String dataReg = "{\"sessionId\":\"3512E6E23F86A3EB5702B77B4D7F7471\",\"action\":\"LOG\",\"anyData\":{\"id\":1,\"version\":0}}";
     private static BouncyCastleProvider bouncyCastleProvider;
-    public final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
+    public static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
     private static APIInterface apiInterface;
 
     private static LibraryResponse libraryResponse;
@@ -49,7 +47,17 @@ public class TestLibrary {
     private static Thread thread;
     private static UserData userDataReg;
 
+    static {
+        TestLibrary.baseUrl = "http://172.105.82.193:8181/sanarip-tamga/";
+        //filePath = "/data/data/" + packageName + "/keystore.jks";
+        initProvider();
+        initRetrofit();
+    }
+
     public static void main(String[] args) {
+
+        String libraryResponse1 = signQrData(data);
+        System.out.println(libraryResponse1);
 
 //        TimeZone tz = TimeZone.getTimeZone("GMT+6");
 //        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm"); // Quoted "Z" to indicate UTC, no timezone offset
@@ -70,55 +78,46 @@ public class TestLibrary {
 //        System.out.println(formattedStartDate + " + " + "Дата через 1 месяц: " + formattedEndDate);
     }
 
-    public TestLibrary(String packageName) {
-        filePath = "/data/data/" + packageName + "/keystore.jks";
-    }
-
-    public TestLibrary(String baseUrl, String packageName) {
-        TestLibrary.baseUrl = baseUrl;
-        filePath = "/data/data/" + packageName + "/keystore.jks";
-        initProvider();
-        initRetrofit();
-    }
+//    public TestLibrary(String packageName) {
+//        filePath = "/data/data/" + packageName + "/keystore.jks";
+//    }
+//
+//    public TestLibrary(String baseUrl, String packageName) {
+//        TestLibrary.baseUrl = baseUrl;
+//        filePath = "/data/data/" + packageName + "/keystore.jks";
+//        initProvider();
+//        initRetrofit();
+//    }
 
     public static String signQrData(String qrResult) {
-        thread = new Thread(() -> {
-            this.qrResult = qrResult;
-            libraryResponse = new LibraryResponse();
-            try {
-                Gson gson = new Gson();
-                JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-                action = jsonObject.get("action").getAsString();
-                sessionId = jsonObject.get("sessionId").getAsString();
-
-                switch (action) {
-                    case "REG":
-                        JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
-                        userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
-                        register(userDataReg, action);
-                        break;
-                    case "LOG":
-                        JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
-                        userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
-                        login(userDataReg, action);
-                        break;
-                    case "DOC":
-                        JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
-                        docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
-                        document(docData, action);
-                        break;
-                }
-
-            } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-                System.err.println(e.getMessage());
-            } catch (GeneralSecurityException | IOException e) {
-            }
-        });
-        thread.start();
+        libraryResponse = new LibraryResponse();
         try {
-            thread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
+            action = jsonObject.get("action").getAsString();
+            sessionId = jsonObject.get("sessionId").getAsString();
+
+            switch (action) {
+                case "REG":
+                    JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
+                    userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
+                    register(userDataReg, action);
+                    break;
+                case "LOG":
+                    JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
+                    userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
+                    login(userDataReg, action);
+                    break;
+                case "DOC":
+                    JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
+                    docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
+                    document(docData, action);
+                    break;
+            }
+
+        } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+            System.err.println(e.getMessage());
+        } catch (GeneralSecurityException | IOException e) {
         }
         return JsonUtils.toJson(libraryResponse);
     }
@@ -272,7 +271,7 @@ public class TestLibrary {
 
     private static PrivateKey getPrivateKey(String hexHash) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        FileInputStream inputStream = new FileInputStream(new File(filePath));
+        FileInputStream inputStream = new FileInputStream("keystore.jks");
 //        FileInputStream inputStream = new FileInputStream("keystore.jks");
         ks.load(inputStream, "passwd".toCharArray());
         return (PrivateKey) ks.getKey(hexHash, "passwd".toCharArray());
@@ -282,7 +281,7 @@ public class TestLibrary {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
         ks.setKeyEntry(hexHash, privateKey, "passwd".toCharArray(), new java.security.cert.Certificate[]{cert});
-        FileOutputStream fos = new FileOutputStream(new File(filePath));
+        FileOutputStream fos = new FileOutputStream("keystore.jks");
 //        FileOutputStream fos = new FileOutputStream("keystore.jks");
         ks.store(fos, "passwd".toCharArray());
         fos.close();
@@ -325,14 +324,14 @@ public class TestLibrary {
         return keyPairGenerator.generateKeyPair();
     }
 
-    private void initRetrofit() {
+    private static void initRetrofit() {
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(TestLibrary.baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        this.apiInterface = retrofit.create(APIInterface.class);
+        TestLibrary.apiInterface = retrofit.create(APIInterface.class);
     }
 
     private static void userUpdate(UserUpdate userUpdate, int userId, String session) {
@@ -416,7 +415,7 @@ public class TestLibrary {
         return Base64.getEncoder().encodeToString(digitalSignature);
     }
 
-    private void initProvider() {
+    private static void initProvider() {
         bouncyCastleProvider = BOUNCY_CASTLE_PROVIDER;
         Security.removeProvider("BC");
         Security.addProvider(bouncyCastleProvider);
@@ -440,7 +439,7 @@ public class TestLibrary {
     public ArrayList<String> getKeys() {
         ArrayList<String> keys = new ArrayList<>();
         try {
-            FileInputStream fis = new FileInputStream(filePath);
+            FileInputStream fis = new FileInputStream("keystore.jks");
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(fis, "passwd".toCharArray());
             Enumeration<String> aliases = keyStore.aliases();
@@ -461,7 +460,7 @@ public class TestLibrary {
                 "Accept: application/json",
                 "X-Requested-With': 'XMLHttpRequest",
         })
-        @POST("http://172.105.82.193:8181/sanarip-tamga/ws/rest/com.axelor.auth.db.User/{id}")
+        @POST("ws/rest/com.axelor.auth.db.User/{id}")
         Call<ResponseBody> updateUserData(
                 @Path("id") int id,
                 @Header("Cookie") String headers,
@@ -473,7 +472,7 @@ public class TestLibrary {
                 "Accept: application/json",
                 "X-Requested-With': 'XMLHttpRequest",
         })
-        @POST("http://172.105.82.193:8181/sanarip-tamga/ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
+        @POST("ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
         Call<ResponseBody> updateDocData(
                 @Path("id") int id,
                 @Header("Cookie") String headers,

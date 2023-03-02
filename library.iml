@@ -11,5 +11,6 @@
     <orderEntry type="library" name="squareup.retrofit2.retrofit" level="project" />
     <orderEntry type="library" name="google.code.gson" level="project" />
     <orderEntry type="library" name="squareup.retrofit2.converter.gson" level="project" />
+    <orderEntry type="library" name="squareup.okio" level="project" />
   </component>
 </module>
