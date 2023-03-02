@@ -59,6 +59,8 @@ public class TestLibrary {
 
     public static void main(String[] args) {
 
+        String libraryResponse1 = signQrData(dataLog);
+        System.out.println(libraryResponse1);
 //        try {
 //            String libraryResponse1 = signQrData(dataLog);
 //            System.out.println(libraryResponse1);
@@ -97,95 +99,95 @@ public class TestLibrary {
 //        initRetrofit();
 //    }
 
-//    public static String signQrData(String qrResult) {
-//        libraryResponse = new LibraryResponse();
-//        try {
-//            Gson gson = new Gson();
-//
-//            JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-//            action = jsonObject.get("action").getAsString();
-//            sessionId = jsonObject.get("sessionId").getAsString();
-//
-//            switch (action) {
-//                case "REG":
-//                    JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
-//                    userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
-//                    register(userDataReg, action);
-//                    break;
-//                case "LOG":
-//                    JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
-//                    userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
-//                    login(userDataReg, action);
-//                    break;
-//                case "DOC":
-//                    JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
-//                    docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
-//                    document(docData, action);
-//                    break;
-//            }
-//
-//        } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-//            System.err.println(e.getMessage());
-//        } catch (GeneralSecurityException | IOException e) {
-//        }
-//        return JsonUtils.toJson(libraryResponse);
-//    }
-
-    public static String signQrData(String qrResult) throws Exception {
-        Callable<String> callable = new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                libraryResponse = new LibraryResponse();
-                try {
-                    Gson gson = new Gson();
-
-                    JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-                    action = jsonObject.get("action").getAsString();
-                    sessionId = jsonObject.get("sessionId").getAsString();
-
-                    switch (action) {
-                        case "REG":
-                            JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
-                            userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
-                            register(userDataReg, action);
-                            break;
-                        case "LOG":
-                            JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
-                            userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
-                            login(userDataReg, action);
-                            break;
-                        case "DOC":
-                            JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
-                            docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
-                            document(docData, action);
-                            break;
-                    }
-
-                    return JsonUtils.toJson(libraryResponse);
-
-                } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-                    System.err.println(e.getMessage());
-                    throw e;
-                } catch (GeneralSecurityException | IOException e) {
-                    throw e;
-                }
-            }
-        };
-
-        FutureTask<String> task = new FutureTask<>(callable);
-        new Thread(task).start();
-
+    public static String signQrData(String qrResult) {
+        libraryResponse = new LibraryResponse();
         try {
-            return task.get();
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof Exception) {
-                throw (Exception) cause;
-            } else {
-                throw e;
+            Gson gson = new Gson();
+
+            JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
+            action = jsonObject.get("action").getAsString();
+            sessionId = jsonObject.get("sessionId").getAsString();
+
+            switch (action) {
+                case "REG":
+                    JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
+                    userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
+                    register(userDataReg, action);
+                    break;
+                case "LOG":
+                    JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
+                    userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
+                    login(userDataReg, action);
+                    break;
+                case "DOC":
+                    JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
+                    docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
+                    document(docData, action);
+                    break;
             }
+
+        } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+            System.err.println(e.getMessage());
+        } catch (GeneralSecurityException | IOException e) {
         }
+        return JsonUtils.toJson(libraryResponse);
     }
+
+//    public static String signQrData(String qrResult) throws Exception {
+//        Callable<String> callable = new Callable<String>() {
+//            @Override
+//            public String call() throws Exception {
+//                libraryResponse = new LibraryResponse();
+//                try {
+//                    Gson gson = new Gson();
+//
+//                    JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
+//                    action = jsonObject.get("action").getAsString();
+//                    sessionId = jsonObject.get("sessionId").getAsString();
+//
+//                    switch (action) {
+//                        case "REG":
+//                            JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
+//                            userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
+//                            register(userDataReg, action);
+//                            break;
+//                        case "LOG":
+//                            JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
+//                            userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
+//                            login(userDataReg, action);
+//                            break;
+//                        case "DOC":
+//                            JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
+//                            docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
+//                            document(docData, action);
+//                            break;
+//                    }
+//
+//                    return JsonUtils.toJson(libraryResponse);
+//
+//                } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+//                    System.err.println(e.getMessage());
+//                    throw e;
+//                } catch (GeneralSecurityException | IOException e) {
+//                    throw e;
+//                }
+//            }
+//        };
+//
+//        FutureTask<String> task = new FutureTask<>(callable);
+//        new Thread(task).start();
+//
+//        try {
+//            return task.get();
+//        } catch (ExecutionException e) {
+//            Throwable cause = e.getCause();
+//            if (cause instanceof Exception) {
+//                throw (Exception) cause;
+//            } else {
+//                throw e;
+//            }
+//        }
+//    }
 
     private static void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
         SecureRandom random = new SecureRandom();
