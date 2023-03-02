@@ -82,36 +82,40 @@ public class TestLibrary {
     }
 
     public String signQrData(String qrResult) {
-        thread = new Thread(() -> {
-            this.qrResult = qrResult;
-            libraryResponse = new LibraryResponse();
-            try {
-                Gson gson = new Gson();
-                JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-                action = jsonObject.get("action").getAsString();
-                sessionId = jsonObject.get("sessionId").getAsString();
+        this.qrResult = qrResult;
+        thread = new Thread(new Runnable() {
 
-                switch (action) {
-                    case "REG":
-                        JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
-                        userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
-                        register(userDataReg, action);
-                        break;
-                    case "LOG":
-                        JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
-                        userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
-                        login(userDataReg, action);
-                        break;
-                    case "DOC":
-                        JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
-                        docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
-                        document(docData, action);
-                        break;
+            @Override
+            public void run() {
+                libraryResponse = new LibraryResponse();
+                try {
+                    Gson gson = new Gson();
+                    JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
+                    action = jsonObject.get("action").getAsString();
+                    sessionId = jsonObject.get("sessionId").getAsString();
+
+                    switch (action) {
+                        case "REG":
+                            JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
+                            userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
+                            register(userDataReg, action);
+                            break;
+                        case "LOG":
+                            JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
+                            userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
+                            login(userDataReg, action);
+                            break;
+                        case "DOC":
+                            JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
+                            docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
+                            document(docData, action);
+                            break;
+                    }
+
+                } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+                    System.err.println(e.getMessage());
+                } catch (GeneralSecurityException | IOException e) {
                 }
-
-            } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-                System.err.println(e.getMessage());
-            } catch (GeneralSecurityException | IOException e) {
             }
         });
         thread.start();
