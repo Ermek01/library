@@ -4,19 +4,17 @@ import com.example.library.model.*;
 import com.example.library.utils.JsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import okhttp3.*;
-import org.apache.commons.lang3.SerializationUtils;
+import okhttp3.ResponseBody;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-import retrofit2.http.Body;
-import retrofit2.http.FormUrlEncoded;
-import retrofit2.http.POST;
-import retrofit2.http.Path;
+import retrofit2.http.*;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
@@ -24,17 +22,14 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Enumeration;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class TestLibrary {
 
     private final String filePath;
-    private String baseUrl;
+    public static String baseUrl;
     private Boolean isDublicate;
     private static String data = "{\n" +
             "  \"action\": \"REG\",\n" +
@@ -48,8 +43,31 @@ public class TestLibrary {
     private String action = "";
     private String qrResult = "";
     private String userHash = "";
+    private String sessionId = "";
+    private DocData docData;
+
+    private Thread thread;
+    private UserData userDataReg;
 
     public static void main(String[] args) {
+
+//        TimeZone tz = TimeZone.getTimeZone("GMT+6");
+//        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm"); // Quoted "Z" to indicate UTC, no timezone offset
+//        df.setTimeZone(tz);
+//        String nowAsISO = df.format(new Date());
+//
+//        System.out.println(nowAsISO);
+//
+//        Calendar calendar = Calendar.getInstance();
+//        calendar.setTime(new Date()); // устанавливаем текущую дату
+//        Date startDate = calendar.getTime();
+//        calendar.add(Calendar.MONTH, 1); // добавляем 1 месяц
+//        Date endDate = calendar.getTime(); // получаем дату через 1 месяц
+//
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+//        String formattedEndDate = sdf.format(endDate);
+//        String formattedStartDate = sdf.format(startDate);
+//        System.out.println(formattedStartDate + " + " + "Дата через 1 месяц: " + formattedEndDate);
     }
 
     public TestLibrary(String packageName) {
@@ -57,47 +75,58 @@ public class TestLibrary {
     }
 
     public TestLibrary(String baseUrl, String packageName) {
-        this.baseUrl = baseUrl;
+        TestLibrary.baseUrl = baseUrl;
         filePath = "/data/data/" + packageName + "/keystore.jks";
         initProvider();
         initRetrofit();
     }
 
     public String signQrData(String qrResult) {
-        this.qrResult = qrResult;
-        libraryResponse = new LibraryResponse();
-        try {
-            Gson gson = new Gson();
-            JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-            action = jsonObject.get("action").getAsString();
-            switch (action) {
-                case "REG":
-                    JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
-                    UserData userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
-                    register(userDataReg, action);
-                    break;
-                case "LOG":
-                    JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
-                    UserData userDataLog = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
-                    login(userDataLog, action);
-                    break;
-                case "DOC":
-                    JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
-                    DocData docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
-                    document(docData, action);
-                    break;
-            }
+        thread = new Thread(() -> {
+            this.qrResult = qrResult;
+            libraryResponse = new LibraryResponse();
+            try {
+                Gson gson = new Gson();
+                JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
+                action = jsonObject.get("action").getAsString();
+                sessionId = jsonObject.get("sessionId").getAsString();
 
-        } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-            System.err.println(e.getMessage());
-        } catch (GeneralSecurityException | IOException e) {
+                switch (action) {
+                    case "REG":
+                        JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
+                        userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
+                        register(userDataReg, action);
+                        break;
+                    case "LOG":
+                        JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
+                        userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
+                        login(userDataReg, action);
+                        break;
+                    case "DOC":
+                        JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
+                        docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
+                        document(docData, action);
+                        break;
+                }
+
+            } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+                System.err.println(e.getMessage());
+            } catch (GeneralSecurityException | IOException e) {
+            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         return JsonUtils.toJson(libraryResponse);
     }
 
     private void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
         SecureRandom random = new SecureRandom();
-        userHash = userIdToHash(userData.getCreatedUserId());
+        String userId = String.valueOf(userData.getUserId());
+        userHash = userIdToHash(userId);
         try {
             getPrivateKey(userHash);
             isDublicate = true;
@@ -115,21 +144,26 @@ public class TestLibrary {
 //        } else {
 //            showResponse("failure", false, "");
 //        }
-        LocalDate startDate = LocalDate.now();
-        LocalDate endDate = startDate.plusMonths(1);
-        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String sendStartDate = startDate.format(myFormatObj);
-        String sendEndDate = endDate.format(myFormatObj);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date()); // устанавливаем текущую дату
+        Date startDate = calendar.getTime();
+        calendar.add(Calendar.MONTH, 1); // добавляем 1 месяц
+        Date endDate = calendar.getTime(); // получаем дату через 1 месяц
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String formattedEndDate = sdf.format(endDate);
+        String formattedStartDate = sdf.format(startDate);
         UserUpdate userUpdate = new UserUpdate();
         UserUpdate.Data user = new UserUpdate.Data();
         String publicKeyString = encodePublicKey(keyPair.getPublic());
         user.setPublicKey(publicKeyString);
         user.setPublicKeyName(userHash);
-        user.setPeriod(sendStartDate + "-" + sendEndDate);
+        user.setPeriod(formattedStartDate + " - " + formattedEndDate);
+        int versionCounter = userData.getVersion() + 1;
+        user.setVersion(versionCounter);
         userUpdate.setData(user);
-        String json = JsonUtils.toJson(userUpdate);
-        System.out.println(json);
-        //userUpdate(digitalSignature, action, publicKey);
+        String session = "JSESSIONID=" + sessionId;
+        userUpdate(userUpdate, userData.getUserId(), session);
     }
 
     private String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
@@ -137,66 +171,99 @@ public class TestLibrary {
         return bytesToHex(hash);
     }
 
-    private void showResponse(String message, boolean result, String doc) {
+    private void showResponse(String message, boolean result) {
         libraryResponse.setAction(action);
-        libraryResponse.setAnyData(qrResult);
-        libraryResponse.setUserHash(userHash);
+        switch (action) {
+            case "LOG":
+                if (userDataReg != null) {
+                    libraryResponse.setAnyData(userDataReg);
+                }
+                break;
+            case "REG":
+                if (userDataReg != null) {
+                    libraryResponse.setAnyData(userDataReg);
+                }
+                break;
+            case "DOC":
+                if (docData != null) {
+                    libraryResponse.setAnyData(docData);
+                }
+                break;
+        }
         libraryResponse.setMessage(message);
         libraryResponse.setResult(result);
-        libraryResponse.setDocument(doc);
     }
 
-    private void login(UserData userData, String action) {
+    private void login(UserData userData, String action) throws InvalidAlgorithmParameterException, CertificateException, NoSuchAlgorithmException, SignatureException, KeyStoreException, IOException, InvalidKeyException {
         try {
-            userHash = userIdToHash(userData.getCreatedUserId());
+            String userId = String.valueOf(userData.getUserId());
+            userHash = userIdToHash(userId);
             PrivateKey privateKey = getPrivateKey(userHash);
             if (privateKey != null) {
-                SecureRandom random = new SecureRandom();
-                String userDataJson = JsonUtils.toJson(userData);
-                byte[] digitalSignature = signingData(privateKey, random, userDataJson);
-                boolean verified = verifiedSignedData(null, userDataJson, digitalSignature);
-                if (verified) {
-                    showResponse("success", true, "");
-                } else {
-                    showResponse("failure", false, "");
-                }
+                showResponse("Авторизация прошла успешно!", true);
+//                SecureRandom random = new SecureRandom();
+//                String userDataJson = JsonUtils.toJson(userData);
+//                byte[] digitalSignature = signingData(privateKey, random, userDataJson);
+//                boolean verified = verifiedSignedData(null, userDataJson, digitalSignature);
+//                if (verified) {
+//                    showResponse("success", true);
+//                } else {
+//                    showResponse("failure", false);
+//                }
 //                request(digitalSignature, action, null);
             } else {
                 System.out.println("Invalid User Id");
-                showResponse("Invalid User Id", false, "");
+                register(userData, action);
+
             }
 
         } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException |
                  CertificateException e) {
         } catch (IOException e) {
-            showResponse("PrivateKey does not exist!", false, "");
-        } catch (SignatureException | InvalidKeyException e) {
-            throw new RuntimeException(e);
+//            showResponse("PrivateKey does not exist!", false);
+            register(userData, action);
+        } catch (SignatureException | InvalidKeyException | InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
         }
 
     }
 
     private void document(DocData docData, String action) {
         try {
-            userHash = userIdToHash(docData.getCreatedUserid());
+            userHash = userIdToHash(String.valueOf(docData.getCreatedUserId()));
             PrivateKey privateKey = getPrivateKey(userHash);
             if (privateKey != null) {
                 SecureRandom random = new SecureRandom();
                 String docDataJson = JsonUtils.toJson(docData);
                 byte[] digitalSignature = signingData(privateKey, random, docDataJson);
-                boolean verified = verifiedSignedData(null, docDataJson, digitalSignature);
-                if (verified) {
-                    showResponse("success", true, "");
-                } else {
-                    showResponse("failure", false, "");
-                }
+                TimeZone tz = TimeZone.getTimeZone("GMT+6");
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+                df.setTimeZone(tz);
+                String nowAsISO = df.format(new Date());
+                DocUpdate docUpdate = new DocUpdate();
+                DocUpdate.Data doc = new DocUpdate.Data();
+                doc.setSubscription(true);
+                doc.setSubscriptionDate(nowAsISO);
+                doc.setSubscriptionData(byteToString(digitalSignature));
+                int versionCounter = docData.getVersion() + 1;
+                doc.setVersion(versionCounter);
+
+                docUpdate.setData(doc);
+                String session = "JSESSIONID=" + sessionId;
+                docUpdate(docUpdate, docData.getDocId(), session);
+//                boolean verified = verifiedSignedData(null, docDataJson, digitalSignature);
+//                if (verified) {
+//                    showResponse("success", true, "");
+//                } else {
+//                    showResponse("failure", false, "");
+//                }
 //                request(digitalSignature, action, null);
             } else {
-                showResponse("Invalid User Id", false, "");
+                showResponse("Для подписания этого документа у вас нет прав!", false);
             }
         } catch (KeyStoreException | IOException | UnrecoverableKeyException | NoSuchAlgorithmException |
                  CertificateException e) {
-            showResponse("PrivateKey does not exist!", false, "");
+            showResponse("PrivateKey does not exist!", false);
         } catch (SignatureException | InvalidKeyException e) {
             throw new RuntimeException(e);
         }
@@ -261,46 +328,92 @@ public class TestLibrary {
     private void initRetrofit() {
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(baseUrl)
+                .baseUrl(TestLibrary.baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         this.apiInterface = retrofit.create(APIInterface.class);
     }
 
-    private void userUpdate(UserUpdate userUpdate) {
-        new Thread(new Runnable() {
+    private void userUpdate(UserUpdate userUpdate, int userId, String session) {
+
+        Call<ResponseBody> call = apiInterface.updateUserData(userId, session, userUpdate);
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void run() {
-                try {
-//                    String encodedPublicKey = encodePublicKey(publicKey);
-//                    ExQrResult exQrResult = new ExQrResult(action, digitalSignature, encodedPublicKey, isDublicate);
-//                    Call<ResponseBody> call = apiInterface.postData(exQrResult);
-//                    call.enqueue(new retrofit2.Callback<ResponseBody>() {
-//                        @Override
-//                        public void onResponse(Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
-//                            if (response.isSuccessful()) {
-//
-//                            } else {
-//
-//                            }
-//                        }
-//
-//                        @Override
-//                        public void onFailure(Call<ResponseBody> call, Throwable t) {
-//                            t.printStackTrace();
-//                        }
-//                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.code() != 200) {
+                    System.out.println(response.code());
+                    System.out.println(response.errorBody());
+                    switch (action) {
+                        case "REG": {
+                            showResponse("Регистрация прошла успешно!", true);
+                            break;
+                        }
+                        case "LOG": {
+                            showResponse("Авторизация прошла успешно!", true);
+                            break;
+                        }
+                    }
+
+                }
+                switch (action) {
+                    case "REG": {
+                        showResponse("Регистрация прошла успешно!", true);
+                        break;
+                    }
+                    case "LOG": {
+                        showResponse("Авторизация прошла успешно!", true);
+                        break;
+                    }
                 }
             }
-        }).start();
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                switch (action) {
+                    case "REG": {
+                        showResponse("Регистрация прошла успешно!", true);
+                        break;
+                    }
+                    case "LOG": {
+                        showResponse("Авторизация прошла успешно!", true);
+                        break;
+                    }
+                }
+                t.printStackTrace();
+            }
+        });
+    }
+
+    private void docUpdate(DocUpdate docUpdate, int docId, String session) {
+
+        Call<ResponseBody> call = apiInterface.updateDocData(docId, session, docUpdate);
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.code() != 200) {
+                    System.out.println(response.code());
+                    System.out.println(response.errorBody());
+                    showResponse("Подписание документов прошло успешно!", true);
+                }
+                showResponse("Подписание документов прошло успешно!", true);
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                showResponse("Подписание документов прошло успешно!", true);
+                t.printStackTrace();
+            }
+        });
     }
 
     private static String encodePublicKey(PublicKey publicKey) {
         byte[] publicKeyBytes = publicKey.getEncoded();
         return Base64.getEncoder().encodeToString(publicKeyBytes);
+    }
+
+    private static String byteToString(byte[] digitalSignature) {
+        return Base64.getEncoder().encodeToString(digitalSignature);
     }
 
     private void initProvider() {
@@ -343,12 +456,35 @@ public class TestLibrary {
 
 
     private interface APIInterface {
-        @FormUrlEncoded
-        @POST("/ws/rest/com.axelor.auth.db.User/{id}")
-        Call<ResponseBody> postData(
+        @Headers({
+                "Content-Type: application/json",
+                "Accept: application/json",
+                "X-Requested-With': 'XMLHttpRequest",
+        })
+        @POST("http://172.105.82.193:8181/sanarip-tamga/ws/rest/com.axelor.auth.db.User/{id}")
+        Call<ResponseBody> updateUserData(
                 @Path("id") int id,
+                @Header("Cookie") String headers,
                 @Body UserUpdate userUpdate
         );
+
+        @Headers({
+                "Content-Type: application/json",
+                "Accept: application/json",
+                "X-Requested-With': 'XMLHttpRequest",
+        })
+        @POST("http://172.105.82.193:8181/sanarip-tamga/ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
+        Call<ResponseBody> updateDocData(
+                @Path("id") int id,
+                @Header("Cookie") String headers,
+                @Body DocUpdate docUpdate
+        );
     }
+
+    /*
+    headers: {
+        "Cookie": "JSESSIONID=
+    }
+     */
 
 }

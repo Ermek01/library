@@ -4,19 +4,19 @@ import java.io.Serializable;
 
 public class UserData implements Serializable {
 
-    private String id;
-    private String version;
+    private int id;
+    private int version;
 
-    public UserData(String id, String version) {
+    public UserData(int id, int version) {
         this.id = id;
         this.version = version;
     }
 
-    public String getCreatedUserId() {
+    public int getUserId() {
         return id;
     }
 
-    public String getVersion() {
+    public int getVersion() {
         return version;
     }
 

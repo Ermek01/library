@@ -14,7 +14,25 @@ public class UserUpdate {
     public static class Data {
         String publicKey;
         String publicKeyName;
-        String period;
+        String publicKeyExpirationDate ;
+
+        int version;
+
+        public String getPublicKeyExpirationDate() {
+            return publicKeyExpirationDate;
+        }
+
+        public void setPublicKeyExpirationDate(String publicKeyExpirationDate) {
+            this.publicKeyExpirationDate = publicKeyExpirationDate;
+        }
+
+        public int getVersion() {
+            return version;
+        }
+
+        public void setVersion(int version) {
+            this.version = version;
+        }
 
         public String getPublicKey() {
             return publicKey;
@@ -33,11 +51,11 @@ public class UserUpdate {
         }
 
         public String getPeriod() {
-            return period;
+            return publicKeyExpirationDate ;
         }
 
         public void setPeriod(String period) {
-            this.period = period;
+            this.publicKeyExpirationDate  = period;
         }
     }
 

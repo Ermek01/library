@@ -9,8 +9,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="bouncycastle.bcmail.jdk15on" level="project" />
     <orderEntry type="library" name="squareup.retrofit2.retrofit" level="project" />
+    <orderEntry type="library" name="google.code.gson" level="project" />
     <orderEntry type="library" name="squareup.retrofit2.converter.gson" level="project" />
-    <orderEntry type="library" name="squareup.okhttp3.logging.interceptor" level="project" />
-    <orderEntry type="library" name="apache.commons.lang3" level="project" />
   </component>
 </module>

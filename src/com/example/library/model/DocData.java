@@ -1,19 +1,24 @@
 package com.example.library.model;
 
 public class DocData {
-    private String docId;
-    private String createdUserid;
+    private int docId;
+    private int createdUserId;
+    private int version;
 
-    public String getDocId() {
+    public int getVersion() {
+        return version;
+    }
+
+    public int getDocId() {
         return docId;
     }
 
-    public String getCreatedUserid() {
-        return createdUserid;
+    public int getCreatedUserId() {
+        return createdUserId;
     }
 
     @Override
     public String toString() {
-        return docId + " " + createdUserid;
+        return docId + " " + createdUserId;
     }
 }
