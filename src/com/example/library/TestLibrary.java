@@ -28,26 +28,26 @@ import java.util.*;
 
 public class TestLibrary {
 
-    private final String filePath;
+    private static final String filePath;
     public static String baseUrl;
-    private Boolean isDublicate;
+    private static Boolean isDublicate;
     private static String data = "{\n" +
             "  \"action\": \"REG\",\n" +
             "  \"anyData\": {\"createdUserId\":\"112\",\"username\":\"Эрмек\",\"email\":\"email.ru\"}\n" +
             "}";
-    private BouncyCastleProvider bouncyCastleProvider;
+    private static BouncyCastleProvider bouncyCastleProvider;
     public final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
-    private APIInterface apiInterface;
+    private static APIInterface apiInterface;
 
-    private LibraryResponse libraryResponse;
-    private String action = "";
-    private String qrResult = "";
-    private String userHash = "";
-    private String sessionId = "";
-    private DocData docData;
+    private static LibraryResponse libraryResponse;
+    private static String action = "";
+    private static String qrResult = "";
+    private static String userHash = "";
+    private static String sessionId = "";
+    private static DocData docData;
 
-    private Thread thread;
-    private UserData userDataReg;
+    private static Thread thread;
+    private static UserData userDataReg;
 
     public static void main(String[] args) {
 
@@ -81,7 +81,7 @@ public class TestLibrary {
         initRetrofit();
     }
 
-    public String signQrData(String qrResult) {
+    public static String signQrData(String qrResult) {
         thread = new Thread(() -> {
             this.qrResult = qrResult;
             libraryResponse = new LibraryResponse();
@@ -123,7 +123,7 @@ public class TestLibrary {
         return JsonUtils.toJson(libraryResponse);
     }
 
-    private void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
+    private static void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
         SecureRandom random = new SecureRandom();
         String userId = String.valueOf(userData.getUserId());
         userHash = userIdToHash(userId);
@@ -166,12 +166,12 @@ public class TestLibrary {
         userUpdate(userUpdate, userData.getUserId(), session);
     }
 
-    private String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
+    private static String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
         byte[] hash = getMD5Hash(createdUserId);
         return bytesToHex(hash);
     }
 
-    private void showResponse(String message, boolean result) {
+    private static void showResponse(String message, boolean result) {
         libraryResponse.setAction(action);
         switch (action) {
             case "LOG":
@@ -194,7 +194,7 @@ public class TestLibrary {
         libraryResponse.setResult(result);
     }
 
-    private void login(UserData userData, String action) throws InvalidAlgorithmParameterException, CertificateException, NoSuchAlgorithmException, SignatureException, KeyStoreException, IOException, InvalidKeyException {
+    private static void login(UserData userData, String action) throws InvalidAlgorithmParameterException, CertificateException, NoSuchAlgorithmException, SignatureException, KeyStoreException, IOException, InvalidKeyException {
         try {
             String userId = String.valueOf(userData.getUserId());
             userHash = userIdToHash(userId);
@@ -228,7 +228,7 @@ public class TestLibrary {
 
     }
 
-    private void document(DocData docData, String action) {
+    private static void document(DocData docData, String action) {
         try {
             userHash = userIdToHash(String.valueOf(docData.getCreatedUserId()));
             PrivateKey privateKey = getPrivateKey(userHash);
@@ -270,7 +270,7 @@ public class TestLibrary {
     }
 
 
-    private PrivateKey getPrivateKey(String hexHash) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
+    private static PrivateKey getPrivateKey(String hexHash) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         FileInputStream inputStream = new FileInputStream(new File(filePath));
 //        FileInputStream inputStream = new FileInputStream("keystore.jks");
@@ -278,7 +278,7 @@ public class TestLibrary {
         return (PrivateKey) ks.getKey(hexHash, "passwd".toCharArray());
     }
 
-    private void storeToKeyStore(X509Certificate cert, PrivateKey privateKey, String hexHash) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    private static void storeToKeyStore(X509Certificate cert, PrivateKey privateKey, String hexHash) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
         ks.setKeyEntry(hexHash, privateKey, "passwd".toCharArray(), new java.security.cert.Certificate[]{cert});
@@ -304,7 +304,7 @@ public class TestLibrary {
         return certGen.generateX509Certificate(keyPair.getPrivate());
     }
 
-    private byte[] signingData(PrivateKey privateKey, SecureRandom random, String anyData) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    private static byte[] signingData(PrivateKey privateKey, SecureRandom random, String anyData) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature signature = Signature.getInstance("SHA256withRSA", bouncyCastleProvider);
         signature.initSign(privateKey, random);
         signature.update(anyData.getBytes());
@@ -318,7 +318,7 @@ public class TestLibrary {
         return signature.verify(digitalSignature);
     }
 
-    private KeyPair generateKeys(SecureRandom random) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+    private static KeyPair generateKeys(SecureRandom random) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", bouncyCastleProvider);
         keyPairGenerator.initialize(2048, random);
@@ -335,7 +335,7 @@ public class TestLibrary {
         this.apiInterface = retrofit.create(APIInterface.class);
     }
 
-    private void userUpdate(UserUpdate userUpdate, int userId, String session) {
+    private static void userUpdate(UserUpdate userUpdate, int userId, String session) {
 
         Call<ResponseBody> call = apiInterface.updateUserData(userId, session, userUpdate);
         call.enqueue(new Callback<ResponseBody>() {
@@ -385,7 +385,7 @@ public class TestLibrary {
         });
     }
 
-    private void docUpdate(DocUpdate docUpdate, int docId, String session) {
+    private static void docUpdate(DocUpdate docUpdate, int docId, String session) {
 
         Call<ResponseBody> call = apiInterface.updateDocData(docId, session, docUpdate);
         call.enqueue(new Callback<ResponseBody>() {
@@ -422,7 +422,7 @@ public class TestLibrary {
         Security.addProvider(bouncyCastleProvider);
     }
 
-    private byte[] getMD5Hash(String userId) throws NoSuchAlgorithmException {
+    private static byte[] getMD5Hash(String userId) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.reset();
         md.update(userId.getBytes());
