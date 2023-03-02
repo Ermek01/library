@@ -25,6 +25,9 @@ import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 public class TestLibrary {
 
@@ -32,7 +35,7 @@ public class TestLibrary {
     public static String baseUrl = "http://172.105.82.193:8181/sanarip-tamga/";
     private static Boolean isDublicate;
     private static String data = "{\"sessionId\":\"75F7B2BDA83104ED34A0EEA9A158962D\",\"action\":\"DOC\",\"anyData\":{\"docId\":1,\"version\":1,\"createdUserId\":1}}";
-    private static String dataReg = "{\"sessionId\":\"3512E6E23F86A3EB5702B77B4D7F7471\",\"action\":\"LOG\",\"anyData\":{\"id\":1,\"version\":0}}";
+    private static String dataLog = "{\"sessionId\":\"3512E6E23F86A3EB5702B77B4D7F7471\",\"action\":\"REG\",\"anyData\":{\"id\":1,\"version\":0}}";
     private static BouncyCastleProvider bouncyCastleProvider;
     public static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
     private static APIInterface apiInterface;
@@ -56,8 +59,13 @@ public class TestLibrary {
 
     public static void main(String[] args) {
 
-        String libraryResponse1 = signQrData(data);
-        System.out.println(libraryResponse1);
+//        try {
+//            String libraryResponse1 = signQrData(dataLog);
+//            System.out.println(libraryResponse1);
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+
 
 //        TimeZone tz = TimeZone.getTimeZone("GMT+6");
 //        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm"); // Quoted "Z" to indicate UTC, no timezone offset
@@ -89,37 +97,94 @@ public class TestLibrary {
 //        initRetrofit();
 //    }
 
-    public static String signQrData(String qrResult) {
-        libraryResponse = new LibraryResponse();
-        try {
-            Gson gson = new Gson();
-            JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
-            action = jsonObject.get("action").getAsString();
-            sessionId = jsonObject.get("sessionId").getAsString();
+//    public static String signQrData(String qrResult) {
+//        libraryResponse = new LibraryResponse();
+//        try {
+//            Gson gson = new Gson();
+//
+//            JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
+//            action = jsonObject.get("action").getAsString();
+//            sessionId = jsonObject.get("sessionId").getAsString();
+//
+//            switch (action) {
+//                case "REG":
+//                    JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
+//                    userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
+//                    register(userDataReg, action);
+//                    break;
+//                case "LOG":
+//                    JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
+//                    userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
+//                    login(userDataReg, action);
+//                    break;
+//                case "DOC":
+//                    JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
+//                    docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
+//                    document(docData, action);
+//                    break;
+//            }
+//
+//        } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+//            System.err.println(e.getMessage());
+//        } catch (GeneralSecurityException | IOException e) {
+//        }
+//        return JsonUtils.toJson(libraryResponse);
+//    }
 
-            switch (action) {
-                case "REG":
-                    JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
-                    userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
-                    register(userDataReg, action);
-                    break;
-                case "LOG":
-                    JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
-                    userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
-                    login(userDataReg, action);
-                    break;
-                case "DOC":
-                    JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
-                    docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
-                    document(docData, action);
-                    break;
+    public static String signQrData(String qrResult) throws Exception {
+        Callable<String> callable = new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                libraryResponse = new LibraryResponse();
+                try {
+                    Gson gson = new Gson();
+
+                    JsonObject jsonObject = gson.fromJson(qrResult, JsonObject.class);
+                    action = jsonObject.get("action").getAsString();
+                    sessionId = jsonObject.get("sessionId").getAsString();
+
+                    switch (action) {
+                        case "REG":
+                            JsonObject anyDataReg = jsonObject.get("anyData").getAsJsonObject();
+                            userDataReg = JsonUtils.fromJson(anyDataReg.toString(), UserData.class);
+                            register(userDataReg, action);
+                            break;
+                        case "LOG":
+                            JsonObject anyDataLog = jsonObject.get("anyData").getAsJsonObject();
+                            userDataReg = JsonUtils.fromJson(anyDataLog.toString(), UserData.class);
+                            login(userDataReg, action);
+                            break;
+                        case "DOC":
+                            JsonObject anyDataDoc = jsonObject.get("anyData").getAsJsonObject();
+                            docData = JsonUtils.fromJson(anyDataDoc.toString(), DocData.class);
+                            document(docData, action);
+                            break;
+                    }
+
+                    return JsonUtils.toJson(libraryResponse);
+
+                } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+                    System.err.println(e.getMessage());
+                    throw e;
+                } catch (GeneralSecurityException | IOException e) {
+                    throw e;
+                }
             }
+        };
 
-        } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-            System.err.println(e.getMessage());
-        } catch (GeneralSecurityException | IOException e) {
+        FutureTask<String> task = new FutureTask<>(callable);
+        new Thread(task).start();
+
+        try {
+            return task.get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof Exception) {
+                throw (Exception) cause;
+            } else {
+                throw e;
+            }
         }
-        return JsonUtils.toJson(libraryResponse);
     }
 
     private static void register(UserData userData, String action) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException, KeyStoreException, IOException {
@@ -162,7 +227,13 @@ public class TestLibrary {
         user.setVersion(versionCounter);
         userUpdate.setData(user);
         String session = "JSESSIONID=" + sessionId;
-        userUpdate(userUpdate, userData.getUserId(), session);
+
+        try{
+            userUpdate(userUpdate, userData.getUserId(), session);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private static String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
@@ -249,7 +320,12 @@ public class TestLibrary {
 
                 docUpdate.setData(doc);
                 String session = "JSESSIONID=" + sessionId;
-                docUpdate(docUpdate, docData.getDocId(), session);
+                try {
+                    docUpdate(docUpdate, docData.getDocId(), session);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
 //                boolean verified = verifiedSignedData(null, docDataJson, digitalSignature);
 //                if (verified) {
 //                    showResponse("success", true, "");
@@ -334,76 +410,118 @@ public class TestLibrary {
         TestLibrary.apiInterface = retrofit.create(APIInterface.class);
     }
 
-    private static void userUpdate(UserUpdate userUpdate, int userId, String session) {
-
+    private static void userUpdate(UserUpdate userUpdate, int userId, String session) throws Exception {
         Call<ResponseBody> call = apiInterface.updateUserData(userId, session, userUpdate);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.code() != 200) {
-                    System.out.println(response.code());
-                    System.out.println(response.errorBody());
-                    switch (action) {
-                        case "REG": {
-                            showResponse("Регистрация прошла успешно!", true);
-                            break;
-                        }
-                        case "LOG": {
-                            showResponse("Авторизация прошла успешно!", true);
-                            break;
-                        }
-                    }
-
+        Response<ResponseBody> response = call.execute();
+        if (response.code() != 200) {
+            System.out.println(response.code());
+            System.out.println(response.errorBody());
+            switch (action) {
+                case "REG": {
+                    showResponse("Регистрация прошла успешно!", true);
+                    break;
                 }
-                switch (action) {
-                    case "REG": {
-                        showResponse("Регистрация прошла успешно!", true);
-                        break;
-                    }
-                    case "LOG": {
-                        showResponse("Авторизация прошла успешно!", true);
-                        break;
-                    }
+                case "LOG": {
+                    showResponse("Авторизация прошла успешно!", true);
+                    break;
                 }
             }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                switch (action) {
-                    case "REG": {
-                        showResponse("Регистрация прошла успешно!", true);
-                        break;
-                    }
-                    case "LOG": {
-                        showResponse("Авторизация прошла успешно!", true);
-                        break;
-                    }
+        } else {
+            switch (action) {
+                case "REG": {
+                    showResponse("Регистрация прошла успешно!", true);
+                    break;
                 }
-                t.printStackTrace();
+                case "LOG": {
+                    showResponse("Авторизация прошла успешно!", true);
+                    break;
+                }
             }
-        });
+        }
     }
 
-    private static void docUpdate(DocUpdate docUpdate, int docId, String session) {
+//    private static void userUpdate(UserUpdate userUpdate, int userId, String session) {
+//
+//        Call<ResponseBody> call = apiInterface.updateUserData(userId, session, userUpdate);
+//        call.enqueue(new Callback<ResponseBody>() {
+//            @Override
+//            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+//                if (response.code() != 200) {
+//                    System.out.println(response.code());
+//                    System.out.println(response.errorBody());
+//                    switch (action) {
+//                        case "REG": {
+//                            showResponse("Регистрация прошла успешно!", true);
+//                            break;
+//                        }
+//                        case "LOG": {
+//                            showResponse("Авторизация прошла успешно!", true);
+//                            break;
+//                        }
+//                    }
+//
+//                }
+//                switch (action) {
+//                    case "REG": {
+//                        showResponse("Регистрация прошла успешно!", true);
+//                        break;
+//                    }
+//                    case "LOG": {
+//                        showResponse("Авторизация прошла успешно!", true);
+//                        break;
+//                    }
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ResponseBody> call, Throwable t) {
+//                switch (action) {
+//                    case "REG": {
+//                        showResponse("Регистрация прошла успешно!", true);
+//                        break;
+//                    }
+//                    case "LOG": {
+//                        showResponse("Авторизация прошла успешно!", true);
+//                        break;
+//                    }
+//                }
+//                t.printStackTrace();
+//            }
+//        });
+//    }
 
+//    private static void docUpdate(DocUpdate docUpdate, int docId, String session) {
+//
+//        Call<ResponseBody> call = apiInterface.updateDocData(docId, session, docUpdate);
+//        call.enqueue(new Callback<ResponseBody>() {
+//            @Override
+//            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+//                if (response.code() != 200) {
+//                    System.out.println(response.code());
+//                    System.out.println(response.errorBody());
+//                    showResponse("Подписание документов прошло успешно!", true);
+//                }
+//                showResponse("Подписание документов прошло успешно!", true);
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ResponseBody> call, Throwable t) {
+//                showResponse("Подписание документов прошло успешно!", true);
+//                t.printStackTrace();
+//            }
+//        });
+//    }
+
+    private static void docUpdate(DocUpdate docUpdate, int docId, String session) throws Exception {
         Call<ResponseBody> call = apiInterface.updateDocData(docId, session, docUpdate);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.code() != 200) {
-                    System.out.println(response.code());
-                    System.out.println(response.errorBody());
-                    showResponse("Подписание документов прошло успешно!", true);
-                }
-                showResponse("Подписание документов прошло успешно!", true);
-            }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                showResponse("Подписание документов прошло успешно!", true);
-                t.printStackTrace();
-            }
-        });
+        Response<ResponseBody> response = call.execute();
+        if (response.code() != 200) {
+            System.out.println(response.code());
+            System.out.println(response.errorBody());
+            showResponse("Подписание документов прошло успешно!", true);
+        } else {
+            showResponse("Подписание документов прошло успешно!", true);
+        }
     }
 
     private static String encodePublicKey(PublicKey publicKey) {
