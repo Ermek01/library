@@ -17,6 +17,18 @@ public class DocData {
         return createdUserId;
     }
 
+    public void setDocId(int docId) {
+        this.docId = docId;
+    }
+
+    public void setCreatedUserId(int createdUserId) {
+        this.createdUserId = createdUserId;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
     @Override
     public String toString() {
         return docId + " " + createdUserId;

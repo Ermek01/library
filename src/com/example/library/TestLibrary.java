@@ -46,6 +46,8 @@ public class TestLibrary {
     private String sessionId = "";
     private DocData docData;
 
+    private boolean isServerSuccess = false;
+
     private Thread thread;
     private UserData userDataReg;
 
@@ -163,15 +165,14 @@ public class TestLibrary {
         user.setPublicKey(publicKeyString);
         user.setPublicKeyName(userHash);
         user.setPeriod(formattedStartDate + " - " + formattedEndDate);
-        int versionCounter = userData.getVersion() + 1;
-        user.setVersion(versionCounter);
+        user.setVersion(userData.getVersion());
         userUpdate.setData(user);
         String session = "JSESSIONID=" + sessionId;
 //        userUpdate(userUpdate, userData.getUserId(), session);
         try{
             userUpdate(userUpdate, userData.getUserId(), session);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -185,16 +186,28 @@ public class TestLibrary {
         switch (action) {
             case "LOG":
                 if (userDataReg != null) {
+                    if (isServerSuccess) {
+                        int versionCounter = userDataReg.getVersion() + 1;
+                        userDataReg.setVersion(versionCounter);
+                    }
                     libraryResponse.setAnyData(userDataReg);
                 }
                 break;
             case "REG":
                 if (userDataReg != null) {
+                    if (isServerSuccess) {
+                        int versionCounter = userDataReg.getVersion() + 1;
+                        userDataReg.setVersion(versionCounter);
+                    }
                     libraryResponse.setAnyData(userDataReg);
                 }
                 break;
             case "DOC":
                 if (docData != null) {
+                    if (isServerSuccess) {
+                        int versionCounter = docData.getVersion() + 1;
+                        docData.setVersion(versionCounter);
+                    }
                     libraryResponse.setAnyData(docData);
                 }
                 break;
@@ -209,6 +222,7 @@ public class TestLibrary {
             userHash = userIdToHash(userId);
             PrivateKey privateKey = getPrivateKey(userHash);
             if (privateKey != null) {
+                isServerSuccess = true;
                 showResponse("Авторизация прошла успешно!", true);
 //                SecureRandom random = new SecureRandom();
 //                String userDataJson = JsonUtils.toJson(userData);
@@ -254,8 +268,7 @@ public class TestLibrary {
                 doc.setSubscription(true);
                 doc.setSubscriptionDate(nowAsISO);
                 doc.setSubscriptionData(byteToString(digitalSignature));
-                int versionCounter = docData.getVersion() + 1;
-                doc.setVersion(versionCounter);
+                doc.setVersion(docData.getVersion());
 
                 docUpdate.setData(doc);
                 String session = "JSESSIONID=" + sessionId;
@@ -263,7 +276,7 @@ public class TestLibrary {
                 try {
                     docUpdate(docUpdate, docData.getDocId(), session);
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
 
 //                boolean verified = verifiedSignedData(null, docDataJson, digitalSignature);
@@ -280,7 +293,7 @@ public class TestLibrary {
                  CertificateException e) {
             showResponse("PrivateKey does not exist!", false);
         } catch (SignatureException | InvalidKeyException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -356,6 +369,7 @@ public class TestLibrary {
         if (response.code() != 200) {
             System.out.println(response.code());
             System.out.println(response.errorBody());
+            isServerSuccess = true;
             switch (action) {
                 case "REG": {
                     showResponse("Регистрация прошла успешно!", true);
@@ -369,10 +383,12 @@ public class TestLibrary {
         } else {
             switch (action) {
                 case "REG": {
+                    isServerSuccess = true;
                     showResponse("Регистрация прошла успешно!", true);
                     break;
                 }
                 case "LOG": {
+                    isServerSuccess = true;
                     showResponse("Авторизация прошла успешно!", true);
                     break;
                 }
@@ -434,8 +450,10 @@ public class TestLibrary {
         if (response.code() != 200) {
             System.out.println(response.code());
             System.out.println(response.errorBody());
+            isServerSuccess = false;
             showResponse("Подписание документов прошло успешно!", true);
         } else {
+            isServerSuccess = true;
             showResponse("Подписание документов прошло успешно!", true);
         }
     }
@@ -503,7 +521,7 @@ public class TestLibrary {
                 keys.add(alias);
             }
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
         return keys;
     }
