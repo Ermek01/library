@@ -167,7 +167,12 @@ public class TestLibrary {
         user.setVersion(versionCounter);
         userUpdate.setData(user);
         String session = "JSESSIONID=" + sessionId;
-        userUpdate(userUpdate, userData.getUserId(), session);
+//        userUpdate(userUpdate, userData.getUserId(), session);
+        try{
+            userUpdate(userUpdate, userData.getUserId(), session);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
@@ -254,7 +259,13 @@ public class TestLibrary {
 
                 docUpdate.setData(doc);
                 String session = "JSESSIONID=" + sessionId;
-                docUpdate(docUpdate, docData.getDocId(), session);
+//                docUpdate(docUpdate, docData.getDocId(), session);
+                try {
+                    docUpdate(docUpdate, docData.getDocId(), session);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
 //                boolean verified = verifiedSignedData(null, docDataJson, digitalSignature);
 //                if (verified) {
 //                    showResponse("success", true, "");
@@ -339,77 +350,116 @@ public class TestLibrary {
         this.apiInterface = retrofit.create(APIInterface.class);
     }
 
-    private void userUpdate(UserUpdate userUpdate, int userId, String session) {
-
+    private void userUpdate(UserUpdate userUpdate, int userId, String session) throws Exception {
         Call<ResponseBody> call = apiInterface.updateUserData(userId, session, userUpdate);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.code() != 200) {
-                    System.out.println(response.code());
-                    System.out.println(response.errorBody());
-                    switch (action) {
-                        case "REG": {
-                            showResponse("Регистрация прошла успешно!", true);
-                            break;
-                        }
-                        case "LOG": {
-                            showResponse("Авторизация прошла успешно!", true);
-                            break;
-                        }
-                    }
-
+        Response<ResponseBody> response = call.execute();
+        if (response.code() != 200) {
+            System.out.println(response.code());
+            System.out.println(response.errorBody());
+            switch (action) {
+                case "REG": {
+                    showResponse("Регистрация прошла успешно!", true);
+                    break;
                 }
-                switch (action) {
-                    case "REG": {
-                        showResponse("Регистрация прошла успешно!", true);
-                        break;
-                    }
-                    case "LOG": {
-                        showResponse("Авторизация прошла успешно!", true);
-                        break;
-                    }
+                case "LOG": {
+                    showResponse("Авторизация прошла успешно!", true);
+                    break;
                 }
             }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                switch (action) {
-                    case "REG": {
-                        showResponse("Регистрация прошла успешно!", true);
-                        break;
-                    }
-                    case "LOG": {
-                        showResponse("Авторизация прошла успешно!", true);
-                        break;
-                    }
+        } else {
+            switch (action) {
+                case "REG": {
+                    showResponse("Регистрация прошла успешно!", true);
+                    break;
                 }
-                t.printStackTrace();
+                case "LOG": {
+                    showResponse("Авторизация прошла успешно!", true);
+                    break;
+                }
             }
-        });
+        }
     }
-
-    private void docUpdate(DocUpdate docUpdate, int docId, String session) {
-
+//    private void userUpdate(UserUpdate userUpdate, int userId, String session) {
+//
+//        Call<ResponseBody> call = apiInterface.updateUserData(userId, session, userUpdate);
+//        call.enqueue(new Callback<ResponseBody>() {
+//            @Override
+//            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+//                if (response.code() != 200) {
+//                    System.out.println(response.code());
+//                    System.out.println(response.errorBody());
+//                    switch (action) {
+//                        case "REG": {
+//                            showResponse("Регистрация прошла успешно!", true);
+//                            break;
+//                        }
+//                        case "LOG": {
+//                            showResponse("Авторизация прошла успешно!", true);
+//                            break;
+//                        }
+//                    }
+//
+//                }
+//                switch (action) {
+//                    case "REG": {
+//                        showResponse("Регистрация прошла успешно!", true);
+//                        break;
+//                    }
+//                    case "LOG": {
+//                        showResponse("Авторизация прошла успешно!", true);
+//                        break;
+//                    }
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ResponseBody> call, Throwable t) {
+//                switch (action) {
+//                    case "REG": {
+//                        showResponse("Регистрация прошла успешно!", true);
+//                        break;
+//                    }
+//                    case "LOG": {
+//                        showResponse("Авторизация прошла успешно!", true);
+//                        break;
+//                    }
+//                }
+//                t.printStackTrace();
+//            }
+//        });
+//    }
+    private  void docUpdate(DocUpdate docUpdate, int docId, String session) throws Exception {
         Call<ResponseBody> call = apiInterface.updateDocData(docId, session, docUpdate);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.code() != 200) {
-                    System.out.println(response.code());
-                    System.out.println(response.errorBody());
-                    showResponse("Подписание документов прошло успешно!", true);
-                }
-                showResponse("Подписание документов прошло успешно!", true);
-            }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                showResponse("Подписание документов прошло успешно!", true);
-                t.printStackTrace();
-            }
-        });
+        Response<ResponseBody> response = call.execute();
+        if (response.code() != 200) {
+            System.out.println(response.code());
+            System.out.println(response.errorBody());
+            showResponse("Подписание документов прошло успешно!", true);
+        } else {
+            showResponse("Подписание документов прошло успешно!", true);
+        }
     }
+//    private void docUpdate(DocUpdate docUpdate, int docId, String session) {
+//
+//        Call<ResponseBody> call = apiInterface.updateDocData(docId, session, docUpdate);
+//        call.enqueue(new Callback<ResponseBody>() {
+//            @Override
+//            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+//                if (response.code() != 200) {
+//                    System.out.println(response.code());
+//                    System.out.println(response.errorBody());
+//                    showResponse("Подписание документов прошло успешно!", true);
+//                }
+//                showResponse("Подписание документов прошло успешно!", true);
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ResponseBody> call, Throwable t) {
+//                showResponse("Подписание документов прошло успешно!", true);
+//                t.printStackTrace();
+//            }
+//        });
+//    }
 
     private static String encodePublicKey(PublicKey publicKey) {
         byte[] publicKeyBytes = publicKey.getEncoded();
