@@ -34,7 +34,7 @@ public class TestLibrary {
     //private static final String filePath = "";
     public static String baseUrl = "http://172.105.82.193:8181/sanarip-tamga/";
     private static Boolean isDublicate;
-    private static String data = "{\"sessionId\":\"75F7B2BDA83104ED34A0EEA9A158962D\",\"action\":\"DOC\",\"anyData\":{\"docId\":1,\"version\":1,\"createdUserId\":1}}";
+    private static String data = "{\"sessionId\":\"75F7B2BDA83104ED34A0EEA9A158962D\",\"actiodfdsfn\":\"DOC\",\"anyData\":{\"docId\":1,\"version\":1,\"createdUserId\":1}}";
     private static String dataLog = "{\"sessionId\":\"3512E6E23F86A3EB5702B77B4D7F7471\",\"action\":\"REG\",\"anyData\":{\"id\":1,\"version\":0}}";
     private static BouncyCastleProvider bouncyCastleProvider;
     public static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
@@ -59,7 +59,7 @@ public class TestLibrary {
 
     public static void main(String[] args) {
 
-        String libraryResponse1 = signQrData(dataLog);
+        String libraryResponse1 = signQrData(data);
         System.out.println(libraryResponse1);
 //        try {
 //            String libraryResponse1 = signQrData(dataLog);
@@ -126,9 +126,11 @@ public class TestLibrary {
                     break;
             }
 
-        } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-            System.err.println(e.getMessage());
         } catch (GeneralSecurityException | IOException e) {
+            System.err.println(e.getMessage());
+        } catch (NullPointerException e) {
+            System.out.println("Данный QR не распознан!");
+            showResponse("Данный QR не распознан!", false);
         }
         return JsonUtils.toJson(libraryResponse);
     }
