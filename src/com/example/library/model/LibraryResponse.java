@@ -10,6 +10,8 @@ public class LibraryResponse {
 
     private String action;
 
+    private int httpCode;
+
     public LibraryResponse(String message, Boolean result, UserData anyData, String action) {
         this.message = message;
         this.result = result;
@@ -35,5 +37,13 @@ public class LibraryResponse {
 
     public void setAnyData(Object anyData) {
         this.anyData = anyData;
+    }
+
+    public int getHttpCode() {
+        return httpCode;
+    }
+
+    public void setHttpCode(int httpCode) {
+        this.httpCode = httpCode;
     }
 }

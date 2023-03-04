@@ -45,6 +45,7 @@ public class TestLibrary {
     private String userHash = "";
     private String sessionId = "";
     private DocData docData;
+    private int httpCode = 0;
 
     private boolean isServerSuccess = false;
 
@@ -117,6 +118,10 @@ public class TestLibrary {
                 } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
                     System.err.println(e.getMessage());
                 } catch (GeneralSecurityException | IOException e) {
+                }
+                catch (NullPointerException e) {
+                    System.out.println("Данный QR не распознан!");
+                    showResponse("Данный QR не распознан!", false);
                 }
             }
         });
@@ -212,6 +217,7 @@ public class TestLibrary {
                 }
                 break;
         }
+        libraryResponse.setHttpCode(httpCode);
         libraryResponse.setMessage(message);
         libraryResponse.setResult(result);
     }
@@ -367,6 +373,7 @@ public class TestLibrary {
         Call<ResponseBody> call = apiInterface.updateUserData(userId, session, userUpdate);
         Response<ResponseBody> response = call.execute();
         if (response.code() != 200) {
+            httpCode = response.code();
             System.out.println(response.code());
             System.out.println(response.errorBody());
             isServerSuccess = true;
@@ -382,6 +389,7 @@ public class TestLibrary {
             }
         } else {
             isServerSuccess = false;
+            httpCode = response.code();
             switch (action) {
                 case "REG": {
                     showResponse("Регистрация прошла успешно!", true);
@@ -450,9 +458,11 @@ public class TestLibrary {
             System.out.println(response.code());
             System.out.println(response.errorBody());
             isServerSuccess = false;
+            httpCode = response.code();
             showResponse("Подписание документов прошло успешно!", true);
         } else {
             isServerSuccess = true;
+            httpCode = response.code();
             showResponse("Подписание документов прошло успешно!", true);
         }
     }
