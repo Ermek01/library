@@ -291,7 +291,7 @@ public class TestLibrary {
             }
         } catch (KeyStoreException | IOException | UnrecoverableKeyException | NoSuchAlgorithmException |
                  CertificateException e) {
-            showResponse("PrivateKey does not exist!", false);
+            showResponse("Отсутствует приватный ключ для подписания документа", false);
         } catch (SignatureException | InvalidKeyException e) {
             e.printStackTrace();
         }
@@ -381,14 +381,13 @@ public class TestLibrary {
                 }
             }
         } else {
+            isServerSuccess = false;
             switch (action) {
                 case "REG": {
-                    isServerSuccess = true;
                     showResponse("Регистрация прошла успешно!", true);
                     break;
                 }
                 case "LOG": {
-                    isServerSuccess = true;
                     showResponse("Авторизация прошла успешно!", true);
                     break;
                 }
@@ -533,7 +532,7 @@ public class TestLibrary {
                 "Accept: application/json",
                 "X-Requested-With': 'XMLHttpRequest",
         })
-        @POST("http://172.105.82.193:8181/sanarip-tamga/ws/rest/com.axelor.auth.db.User/{id}")
+        @POST("ws/rest/com.axelor.auth.db.User/{id}")
         Call<ResponseBody> updateUserData(
                 @Path("id") int id,
                 @Header("Cookie") String headers,
@@ -545,7 +544,7 @@ public class TestLibrary {
                 "Accept: application/json",
                 "X-Requested-With': 'XMLHttpRequest",
         })
-        @POST("http://172.105.82.193:8181/sanarip-tamga/ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
+        @POST("ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
         Call<ResponseBody> updateDocData(
                 @Path("id") int id,
                 @Header("Cookie") String headers,
