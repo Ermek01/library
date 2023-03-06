@@ -34,8 +34,16 @@ public class TestLibrary {
     //private static final String filePath = "";
     public static String baseUrl = "http://172.105.82.193:8181/sanarip-tamga/";
     private static Boolean isDublicate;
-    private static String data = "{\"sessionId\":\"75F7B2BDA83104ED34A0EEA9A158962D\",\"actiodfdsfn\":\"DOC\",\"anyData\":{\"docId\":1,\"version\":1,\"createdUserId\":1}}";
-    private static String dataLog = "{\"sessionId\":\"3512E6E23F86A3EB5702B77B4D7F7471\",\"action\":\"REG\",\"anyData\":{\"id\":1,\"version\":0}}";
+    private static String data = "{\n" +
+            "\"action\": \"DOC\",\n" +
+            "\"sessionId\": \"B3BE8B60CA0AB923E2D8A0D1BA91B4AE\",\n" +
+            "\"anyData\": {\n" +
+            "\"docId\": 1,\n" +
+            "\"version\": 0,\n" +
+            "\"createdUserId\": 1\n" +
+            "}\n" +
+            "}";
+    private static String dataLog = "{\"sessionId\":\"B3BE8B60CA0AB923E2D8A0D1BA91B4AE\",\"action\":\"LOG\",\"anyData\":{\"id\":1,\"version\":9}}";
     private static BouncyCastleProvider bouncyCastleProvider;
     public static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
     private static APIInterface apiInterface;
@@ -51,7 +59,7 @@ public class TestLibrary {
     private static UserData userDataReg;
 
     static {
-        TestLibrary.baseUrl = "http://172.105.82.193:8181/sanarip-tamga/";
+        TestLibrary.baseUrl = "http://st.24mycrm.com/sanarip-tamga/";
         //filePath = "/data/data/" + packageName + "/keystore.jks";
         initProvider();
         initRetrofit();
