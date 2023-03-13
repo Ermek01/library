@@ -45,6 +45,8 @@ public class TestLibrary {
     private String userHash = "";
     private String sessionId = "";
     private DocData docData;
+
+    private String filePathTest = "keystore.jks";
     private int httpCode = 0;
 
     private boolean isServerSuccess = false;
@@ -53,6 +55,27 @@ public class TestLibrary {
     private UserData userDataReg;
 
     public static void main(String[] args) {
+
+        String data = "{\n" +
+                "\"action\": \"DOC\",\n" +
+                "\"sessionId\": \"9FC4BA12C1248600C1ABE0E8753DF035\",\n" +
+                "\"anyData\": {\n" +
+                "\"docId\": 1,\n" +
+                "\"version\": 0,\n" +
+                "\"createdUserId\": 1\n" +
+                "}\n" +
+                "}";
+
+        String dataLog = "{\"sessionId\":\"697E924D229CC1B61C2970A28D5A7A9D\",\"action\":\"LOG\",\"anyData\":{\"id\":1,\"version\":9}}";
+
+//        String bUrl = "http://st.24mycrm.com/sanarip-tamga/";
+        TestLibrary.baseUrl = "http://st.24mycrm.com/sanarip-tamga/";
+        String pName = "com.PIB.uved";
+
+        TestLibrary testLibrary = new TestLibrary(baseUrl, pName);
+        String response = testLibrary.signQrData(data);
+        System.out.println(response);
+
 
 //        TimeZone tz = TimeZone.getTimeZone("GMT+6");
 //        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm"); // Quoted "Z" to indicate UTC, no timezone offset
@@ -275,7 +298,7 @@ public class TestLibrary {
                 doc.setSubscriptionDate(nowAsISO);
                 doc.setSubscriptionData(byteToString(digitalSignature));
                 doc.setVersion(docData.getVersion());
-
+                doc.setStatusSelect(2);
                 docUpdate.setData(doc);
                 String session = "JSESSIONID=" + sessionId;
 //                docUpdate(docUpdate, docData.getDocId(), session);

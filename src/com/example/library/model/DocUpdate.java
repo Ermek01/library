@@ -17,10 +17,20 @@ public class DocUpdate {
         private String subscriptionData;
         private String subscriptionDate;
 
+        private int statusSelect;
+
         private int version;
 
         public int getVersion() {
             return version;
+        }
+
+        public int getStatusSelect() {
+            return statusSelect;
+        }
+
+        public void setStatusSelect(int statusSelect) {
+            this.statusSelect = statusSelect;
         }
 
         public void setVersion(int version) {
