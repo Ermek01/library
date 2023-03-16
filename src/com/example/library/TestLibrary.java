@@ -10,7 +10,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -25,9 +24,6 @@ import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 
 public class TestLibrary {
 
@@ -67,8 +63,10 @@ public class TestLibrary {
 
     public static void main(String[] args) {
 
-        String libraryResponse1 = signQrData(data);
-        System.out.println(libraryResponse1);
+        TestLibrary.deletePrivateKey();
+
+//        String libraryResponse1 = signQrData(data);
+//        System.out.println(libraryResponse1);
 //        try {
 //            String libraryResponse1 = signQrData(dataLog);
 //            System.out.println(libraryResponse1);
@@ -564,6 +562,20 @@ public class TestLibrary {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    private static void deletePrivateKey() {
+        String fileName = "keystore.jks";
+        File file = new File(fileName);
+        if (file.exists()) {
+            if (file.delete()) {
+                System.out.println("File deleted successfully.");
+            } else {
+                System.out.println("Failed to delete the file.");
+            }
+        } else {
+            System.out.println("File Not Found");
+        }
     }
 
     public ArrayList<String> getKeys() {
