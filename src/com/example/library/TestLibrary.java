@@ -1,6 +1,11 @@
 package com.example.library;
 
 import com.example.library.model.*;
+import com.example.library.model.doc.DocData;
+import com.example.library.model.doc.DocUpdate;
+import com.example.library.model.key.ExKeyModel;
+import com.example.library.model.user.UserData;
+import com.example.library.model.user.UserUpdate;
 import com.example.library.utils.JsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -10,7 +15,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -204,7 +208,7 @@ public class TestLibrary {
         }
     }
 
-    private String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
+    private static String userIdToHash(String createdUserId) throws NoSuchAlgorithmException {
         byte[] hash = getMD5Hash(createdUserId);
         return bytesToHex(hash);
     }
@@ -526,7 +530,7 @@ public class TestLibrary {
         Security.addProvider(bouncyCastleProvider);
     }
 
-    private byte[] getMD5Hash(String userId) throws NoSuchAlgorithmException {
+    private static byte[] getMD5Hash(String userId) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.reset();
         md.update(userId.getBytes());
@@ -558,6 +562,56 @@ public class TestLibrary {
         return keys;
     }
 
+    public String deletePrivateKey(String sessionId, int id) {
+        String userId = String.valueOf(id);
+        LibraryResponse libraryResponse = new LibraryResponse();
+        try {
+            userHash = userIdToHash(userId);
+            PrivateKey privateKey = getPrivateKey(userHash);
+            if (privateKey != null) {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    if (file.delete()) {
+                        libraryResponse.setResult(true);
+                        libraryResponse.setMessage("Приватный ключ успешно удален!");
+                        System.out.println("Приватный ключ успешно удален!");
+//                        ExKeyModel exKeyModel = new ExKeyModel();
+//                        TimeZone tz = TimeZone.getTimeZone("GMT+6");
+//                        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+//                        df.setTimeZone(tz);
+//                        String nowAsISO = df.format(new Date());
+//                        exKeyModel.setDate(nowAsISO);
+//                        exKeyModel.setKeyName(userHash);
+//                        thread = new Thread(new Runnable() {
+//
+//                            @Override
+//                            public void run() {
+//                                Call<ResponseBody> call = apiInterface.notifyToServer(id, sessionId, exKeyModel);
+//                                try {
+//                                    Response<ResponseBody> response = call.execute();
+//                                } catch (IOException e) {
+//                                    e.printStackTrace();
+//                                }
+//                            }
+//                        });
+
+                    } else {
+                        System.out.println("Произошла ошибка при удалении приватного ключа");
+                    }
+                } else {
+                    System.out.println("Приватный ключ отсутствует");
+                }
+            } else {
+                System.out.println("Invalid User Id");
+            }
+
+        } catch (NoSuchAlgorithmException | IOException | KeyStoreException | UnrecoverableKeyException |
+                 CertificateException e) {
+            e.printStackTrace();
+        }
+        return JsonUtils.toJson(libraryResponse);
+    }
+
 
     private interface APIInterface {
         @Headers({
@@ -582,6 +636,18 @@ public class TestLibrary {
                 @Path("id") int id,
                 @Header("Cookie") String headers,
                 @Body DocUpdate docUpdate
+        );
+
+        @Headers({
+                "Content-Type: application/json",
+                "Accept: application/json",
+                "X-Requested-With': 'XMLHttpRequest",
+        })
+        @POST("ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
+        Call<ResponseBody> notifyToServer(
+                @Path("id") int id,
+                @Header("Cookie") String headers,
+                @Body ExKeyModel exKeyModel
         );
     }
 

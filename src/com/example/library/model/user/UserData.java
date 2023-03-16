@@ -1,0 +1,30 @@
+package com.example.library.model.user;
+
+import java.io.Serializable;
+
+public class UserData implements Serializable {
+
+    private int id;
+    private int version;
+
+    public UserData(int id, int version) {
+        this.id = id;
+        this.version = version;
+    }
+
+    public int getUserId() {
+        return id;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+}
