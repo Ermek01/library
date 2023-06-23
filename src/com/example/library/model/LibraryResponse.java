@@ -1,17 +1,18 @@
 package com.example.library.model;
 
 import com.example.library.model.user.UserData;
+import com.google.gson.annotations.SerializedName;
 
 public class LibraryResponse {
-
+    @SerializedName("message")
     private String message;
-
+    @SerializedName("result")
     private Boolean result;
-
+    @SerializedName("anyData")
     private Object anyData;
-
+    @SerializedName("action")
     private String action;
-
+    @SerializedName("httpCode")
     private int httpCode;
 
     public LibraryResponse(String message, Boolean result, UserData anyData, String action) {

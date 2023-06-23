@@ -1,7 +1,9 @@
 package com.example.library.model.doc;
 
-public class DocUpdate {
+import com.google.gson.annotations.SerializedName;
 
+public class DocUpdate {
+    @SerializedName("data")
     private Data data;
 
     public Data getData() {
@@ -13,13 +15,18 @@ public class DocUpdate {
     }
 
     public static class Data {
+        @SerializedName("subscription")
         private boolean subscription;
+        @SerializedName("subscriptionData")
         private String subscriptionData;
+        @SerializedName("subscriptionDate")
         private String subscriptionDate;
-
+        @SerializedName("statusSelect")
         private int statusSelect;
-
+        @SerializedName("version")
         private int version;
+        @SerializedName("id")
+        private int id;
 
         public int getVersion() {
             return version;
@@ -60,5 +67,14 @@ public class DocUpdate {
         public void setSubscriptionDate(String subscriptionDate) {
             this.subscriptionDate = subscriptionDate;
         }
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
     }
 }
+

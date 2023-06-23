@@ -5,12 +5,11 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="corretto-11" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="bouncycastle.bcmail.jdk15on" level="project" />
     <orderEntry type="library" name="squareup.retrofit2.retrofit" level="project" />
     <orderEntry type="library" name="google.code.gson" level="project" />
     <orderEntry type="library" name="squareup.retrofit2.converter.gson" level="project" />
-    <orderEntry type="library" name="squareup.okio" level="project" />
+    <orderEntry type="library" name="bouncycastle.bcpkix.jdk15on" level="project" />
   </component>
 </module>

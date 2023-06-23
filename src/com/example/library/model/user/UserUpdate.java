@@ -1,6 +1,9 @@
 package com.example.library.model.user;
 
+import com.google.gson.annotations.SerializedName;
+
 public class UserUpdate {
+    @SerializedName("data")
     private Data data;
 
     public Data getData() {
@@ -12,10 +15,13 @@ public class UserUpdate {
     }
 
     public static class Data {
+        @SerializedName("publicKey")
         String publicKey;
+        @SerializedName("publicKeyName")
         String publicKeyName;
+        @SerializedName("publicKeyExpirationDate")
         String publicKeyExpirationDate ;
-
+        @SerializedName("version")
         int version;
 
         public String getPublicKeyExpirationDate() {

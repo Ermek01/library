@@ -1,8 +1,13 @@
 package com.example.library.model.doc;
 
+import com.google.gson.annotations.SerializedName;
+
 public class DocData {
+    @SerializedName("docId")
     private int docId;
+    @SerializedName("createdUserId")
     private int createdUserId;
+    @SerializedName("version")
     private int version;
 
     public int getVersion() {

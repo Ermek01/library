@@ -1,10 +1,14 @@
 package com.example.library.model.user;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.io.Serializable;
 
 public class UserData implements Serializable {
 
+    @SerializedName("id")
     private int id;
+    @SerializedName("version")
     private int version;
 
     public UserData(int id, int version) {
