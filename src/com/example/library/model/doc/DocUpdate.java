@@ -13,7 +13,7 @@ public class DocUpdate {
     public void setData(Data data) {
         this.data = data;
     }
-
+    //
     public static class Data {
         @SerializedName("subscription")
         private boolean subscription;
