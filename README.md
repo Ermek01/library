@@ -79,3 +79,17 @@ byte[] digitalSignature = signingData(privateKey, random, docDataJson);
 ```
 ### ***Отправка подписанных данных на сервер:***
 После создания подписи библиотека отправляет POST-запрос на сервер с использованием переданного baseUrl и подписанных данных. Запрос на сервер отправляется в двух форматах, в зависимости от значения "action" в POST-запросе: для обновления информации о пользователе ("LOG" или "REG") или для проверки корректности документов ("DOC").
+```
+Call<ResponseBody> call = apiInterface.updateDocData(docId, session, docUpdate);
+Response<ResponseBody> response = call.execute();
+String responseBody = response.body().string();
+```
+### ***Проверка подписи на сервере:***
+Проверка подписанных данных происходит на сервере. Сервер использует открытый ключ для декодирования и проверки подписи, чтобы убедиться в том, что данные были подписаны с использованием закрытого ключа и не были изменены после подписания.
+```
+Signature signature = Signature.getInstance("SHA256withRSA");
+signature.initVerify(publicKey);
+signature.update(anyData.getBytes());
+return signature.verify(digitalSignature);
+```
+## Блок-схема библиотеки
