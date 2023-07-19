@@ -95,3 +95,4 @@ signature.update(anyData.getBytes());
 return signature.verify(digitalSignature);
 ```
 ## Блок-схема библиотеки
+![Принцип работы библиотеки](/images/block_diagram.png)
