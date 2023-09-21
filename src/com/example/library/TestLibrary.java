@@ -550,7 +550,7 @@ public class TestLibrary {
                 "Accept: application/json",
                 "X-Requested-With': 'XMLHttpRequest",
         })
-        @POST("ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
+        @POST("ws/rest/com.axelor.apps.sale.db.SaleOrder/{id}")
         Call<ResponseBody> updateDocData(
                 @Path("id") int id,
                 @Header("Cookie") String headers,
@@ -562,7 +562,7 @@ public class TestLibrary {
                 "Accept: application/json",
                 "X-Requested-With': 'XMLHttpRequest",
         })
-        @POST("ws/rest/com.axelor.apps.sale.db.Declaration/{id}")
+        @POST("ws/rest/com.axelor.apps.sale.db.SaleOrder/{id}")
         Call<ResponseBody> notifyToServer(
                 @Path("id") int id,
                 @Header("Cookie") String headers,
