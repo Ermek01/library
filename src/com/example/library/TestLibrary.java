@@ -9,6 +9,7 @@ import com.example.library.model.user.UserUpdate;
 import com.example.library.utils.JsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -42,9 +43,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class TestLibrary {
-
     private final String filePath;
     public static String baseUrl;
     private Boolean isDublicate;
@@ -387,9 +388,15 @@ public class TestLibrary {
 
     private void initRetrofit() {
 
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .build();
+
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(TestLibrary.baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
+                .client(client)
                 .build();
 
         this.apiInterface = retrofit.create(APIInterface.class);
